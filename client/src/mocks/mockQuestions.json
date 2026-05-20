@@ -1,0 +1,46 @@
+[
+  {
+    "id": "q1",
+    "title": "Làm sao để cấu hình Git push không bị lỗi Permission Denied trên Windows?",
+    "content": "Em vừa tạo repo mới trên GitHub nhưng khi push code từ máy local lên thì bị báo lỗi quyền truy cập...",
+    "author": "Nguyễn Văn A",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=A",
+    "tags": ["Git", "Windows"],
+    "views": 142,
+    "answersCount": 3,
+    "createdAt": "2026-05-20T10:30:00.000Z"
+  },
+  {
+    "id": "q2",
+    "title": "Sửa lỗi trùng lặp cấu hình export (Duplicate export) trong Routes của UmiJS",
+    "content": "Mọi người cho em hỏi lỗi này xử lý thế nào ạ? Em kiểm tra trong file routes.ts thấy...",
+    "author": "Trần Thị B",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=B",
+    "tags": ["UmiJS", "TypeScript", "React"],
+    "views": 85,
+    "answersCount": 0,
+    "createdAt": "2026-05-20T08:15:00.000Z"
+  },
+  {
+    "id": "q3",
+    "title": "Phân biệt giữa kiến trúc Hệ thống thông tin (HTTT) và Công nghệ phần mềm (CNPM)?",
+    "content": "Thầy có giao bài tập phân tích so sánh hai định hướng này nhưng em vẫn chưa rõ cấu trúc thực tế...",
+    "author": "Lê Hoàng C",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=C",
+    "tags": ["HTTT", "CNPM", "Lý thuyết"],
+    "views": 310,
+    "answersCount": 5,
+    "createdAt": "2026-05-19T14:20:00.000Z"
+  },
+  {
+    "id": "q4",
+    "title": "Cách lấy token và giải mã TLS Handshake trong Wireshark bài Lab 3 An toàn thông tin",
+    "content": "Em đang làm bài Lab bảo mật hệ thống nhưng khi bắt gói tin TLS không thấy hiện Master Secret...",
+    "author": "Phạm Minh D",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=D",
+    "tags": ["Security", "Wireshark", "Lab"],
+    "views": 95,
+    "answersCount": 0,
+    "createdAt": "2026-05-18T09:00:00.000Z"
+  }
+]
