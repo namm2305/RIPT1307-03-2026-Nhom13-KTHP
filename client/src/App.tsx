@@ -1,20 +1,20 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import MainLayout from './components/mainLayout'; // Đã khớp chữ m viết thường theo file của bạn
-import Home from './pages/Home';
-
-const LoginPlaceholder = () => <div style={{ padding: 24, background: '#fff', borderRadius: 8 }}>Trang Đăng nhập (Thành viên khác làm)</div>;
-const TagsPlaceholder = () => <div style={{ padding: 24, background: '#fff', borderRadius: 8 }}>Trang Danh sách Thẻ môn học</div>;
+import MainLayout from './layouts/MainLayout';
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Route cha dùng chung Layout */}
+        {/* Định nghĩa Layout chung cho toàn bộ website */}
         <Route path="/" element={<MainLayout />}>
-          <Route index element={<Home />} />
-          <Route path="tags" element={<TagsPlaceholder />} />
-          <Route path="login" element={<LoginPlaceholder />} />
+          
+          {/* Hiện tại bên trong đang rỗng, chưa có trang nào */}
+          <Route index element={<div>Trang chủ đang được phát triển...</div>} />
+          
+          {/* Sau này các bạn khác chỉ cần thêm các Route con vào đây */}
+          {/* Ví dụ: <Route path="profile" element={<Profile />} /> */}
+          
         </Route>
       </Routes>
     </BrowserRouter>
