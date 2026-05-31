@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import MainLayout from './layouts/MainLayout';
+import MainLayout from './components/mainLayout';
+import Home from './pages/Home';
+import QuestionDetail from './pages/QuestionDetail';
 
 const App: React.FC = () => {
   return (
@@ -9,11 +11,13 @@ const App: React.FC = () => {
         {/* Định nghĩa Layout chung cho toàn bộ website */}
         <Route path="/" element={<MainLayout />}>
           
-          {/* Hiện tại bên trong đang rỗng, chưa có trang nào */}
-          <Route index element={<div>Trang chủ đang được phát triển...</div>} />
+          {/* Trang chủ - Danh sách câu hỏi */}
+          <Route index element={<Home />} />
+
+          {/* TV3: Trang chi tiết câu hỏi */}
+          <Route path="question/:id" element={<QuestionDetail />} />
           
           {/* Sau này các bạn khác chỉ cần thêm các Route con vào đây */}
-          {/* Ví dụ: <Route path="profile" element={<Profile />} /> */}
           
         </Route>
       </Routes>

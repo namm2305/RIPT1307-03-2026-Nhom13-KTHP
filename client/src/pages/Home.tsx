@@ -1,41 +1,61 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { List, Card, Tabs, Tag, Space, Typography, Button } from 'antd';
 import { EyeOutlined, MessageOutlined, ClockCircleOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
+import axios from 'axios';
 import mockQuestions from '../mocks/mockQuestions.json';
 
 const { Text, Paragraph, Title } = Typography;
 
 interface Question {
-  id: string;
+  _id: string;
   title: string;
   content: string;
-  author: string;
-  avatar: string;
+  author: { name: string; avatar?: string } | string;
   tags: string[];
-  views: number;
-  answersCount: number;
+  viewCount?: number;
+  views?: number;
+  answersCount?: number;
   createdAt: string;
 }
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('latest');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 3; // Số câu hỏi trên một trang
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const pageSize = 3;
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/questions');
+        setQuestions(res.data.data.map((q: any) => ({
+          ...q,
+          views: q.viewCount || 0,
+          answersCount: q.answersCount || 0
+        })));
+      } catch (error) {
+        setQuestions(mockQuestions.map((q: any) => ({ ...q, _id: q.id })));
+      }
+    };
+    fetchQuestions();
+  }, []);
 
   const filteredQuestions = useMemo(() => {
-    const questionsCopy = [...mockQuestions] as Question[];
+    const questionsCopy = [...questions];
     
     if (activeTab === 'latest') {
       return questionsCopy.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     if (activeTab === 'unanswered') {
-      return questionsCopy.filter(q => q.answersCount === 0);
+      return questionsCopy.filter(q => (q.answersCount || 0) === 0);
     }
     if (activeTab === 'popular') {
-      return questionsCopy.sort((a, b) => b.views - a.views);
+      return questionsCopy.sort((a, b) => (b.views || b.viewCount || 0) - (a.views || a.viewCount || 0));
     }
     return questionsCopy;
-  }, [activeTab]);
+  }, [activeTab, questions]);
 
   const handleTabChange = (key: string) => {
     setActiveTab(key);
@@ -96,17 +116,18 @@ const Home: React.FC = () => {
             {/* Đã sửa lỗi bodyStyle -> styles cho Antd v5 */}
             <Card 
               hoverable 
-              style={{ width: '100%', borderRadius: '8px' }}
+              style={{ width: '100%', borderRadius: '8px', cursor: 'pointer' }}
               styles={{ body: { padding: '20px 24px' } }}
+              onClick={() => navigate(`/question/${item._id}`)}
             >
               <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                 {/* Ảnh đại diện User */}
-                <img src={item.avatar} alt={item.author} style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#e6f7ff' }} />
+                <img src={typeof item.author === 'object' ? item.author.avatar : item.avatar} alt={typeof item.author === 'object' ? item.author.name : item.author} style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#e6f7ff' }} />
                 
                 <div style={{ flex: 1 }}>
                   {/* Tiêu đề câu hỏi */}
                   <Title level={5} style={{ margin: '0 0 8px 0', color: '#1d1d1d' }}>
-                    <a href={`/question/${item.id}`} style={{ color: 'inherit' }}>{item.title}</a>
+                    {item.title}
                   </Title>
                   
                   {/* Nội dung rút gọn */}
@@ -125,7 +146,7 @@ const Home: React.FC = () => {
                     <Space size="large" style={{ color: '#8c8c8c', fontSize: '13px' }}>
                       <Space size="small">
                         <UserOutlined />
-                        <Text type="secondary">{item.author}</Text>
+                        <Text type="secondary">{typeof item.author === 'object' ? item.author.name : item.author}</Text>
                       </Space>
                       <Space size="small">
                         <ClockCircleOutlined />

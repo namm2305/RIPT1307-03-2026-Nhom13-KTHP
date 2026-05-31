@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const questionRoutes = require('./routes/questionRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 
 dotenv.config();
@@ -17,6 +19,9 @@ app.use(express.json());
 
 app.use(cors());
 
+
+app.use('/api/questions', questionRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Q&A Forum API' });
