@@ -1,46 +1,82 @@
 [
   {
-    "id": "q1",
-    "title": "Làm sao để cấu hình Git push không bị lỗi Permission Denied trên Windows?",
-    "content": "Em vừa tạo repo mới trên GitHub nhưng khi push code từ máy local lên thì bị báo lỗi quyền truy cập...",
-    "author": "Nguyễn Văn A",
-    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=A",
-    "tags": ["Git", "Windows"],
-    "views": 142,
+    "id": "1",
+    "title": "Cách cấu hình Deploy ứng dụng React lên Vercel?",
+    "tags": ["React", "Vercel"],
+    "views": 150,
     "answersCount": 3,
-    "createdAt": "2026-05-20T10:30:00.000Z"
+    "createdAt": "2026-06-02T10:00:00Z"
   },
   {
-    "id": "q2",
-    "title": "Sửa lỗi trùng lặp cấu hình export (Duplicate export) trong Routes của UmiJS",
-    "content": "Mọi người cho em hỏi lỗi này xử lý thế nào ạ? Em kiểm tra trong file routes.ts thấy...",
-    "author": "Trần Thị B",
-    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=B",
-    "tags": ["UmiJS", "TypeScript", "React"],
-    "views": 85,
+    "id": "2",
+    "title": "Sự khác biệt giữa Interface và Type trong TypeScript là gì?",
+    "tags": ["TypeScript"],
+    "views": 320,
     "answersCount": 0,
-    "createdAt": "2026-05-20T08:15:00.000Z"
+    "createdAt": "2026-06-01T08:30:00Z"
   },
   {
-    "id": "q3",
-    "title": "Phân biệt giữa kiến trúc Hệ thống thông tin (HTTT) và Công nghệ phần mềm (CNPM)?",
-    "content": "Thầy có giao bài tập phân tích so sánh hai định hướng này nhưng em vẫn chưa rõ cấu trúc thực tế...",
-    "author": "Lê Hoàng C",
-    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=C",
-    "tags": ["HTTT", "CNPM", "Lý thuyết"],
-    "views": 310,
+    "id": "3",
+    "title": "Làm thế nào để fix lỗi CORS khi gọi API từ React lên NodeJS?",
+    "tags": ["NodeJS", "Express", "CORS"],
+    "views": 450,
     "answersCount": 5,
-    "createdAt": "2026-05-19T14:20:00.000Z"
+    "createdAt": "2026-05-30T14:20:00Z"
   },
   {
-    "id": "q4",
-    "title": "Cách lấy token và giải mã TLS Handshake trong Wireshark bài Lab 3 An toàn thông tin",
-    "content": "Em đang làm bài Lab bảo mật hệ thống nhưng khi bắt gói tin TLS không thấy hiện Master Secret...",
-    "author": "Phạm Minh D",
-    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=D",
-    "tags": ["Security", "Wireshark", "Lab"],
+    "id": "4",
+    "title": "Khi nào nên sử dụng useMemo và useCallback để tối ưu hiệu năng?",
+    "tags": ["React", "Hooks"],
+    "views": 180,
+    "answersCount": 2,
+    "createdAt": "2026-05-28T16:45:00Z"
+  },
+  {
+    "id": "5",
+    "title": "Cách cấu hình Ant Design v5 Custom Theme bằng ConfigProvider?",
+    "tags": ["AntDesign", "CSS"],
     "views": 95,
+    "answersCount": 1,
+    "createdAt": "2026-05-25T09:15:00Z"
+  },
+  {
+    "id": "6",
+    "title": "Giải thích cơ chế hoạt động của useEffect Dependency Array?",
+    "tags": ["React", "Hooks"],
+    "views": 210,
     "answersCount": 0,
-    "createdAt": "2026-05-18T09:00:00.000Z"
+    "createdAt": "2026-05-24T07:30:00Z"
+  },
+  {
+    "id": "7",
+    "title": "Cách quản lý Global State hiệu quả trong React mà không dùng Redux?",
+    "tags": ["React", "ContextAPI"],
+    "views": 530,
+    "answersCount": 8,
+    "createdAt": "2026-05-20T11:00:00Z"
+  },
+  {
+    "id": "8",
+    "title": "Làm sao để validate dữ liệu Form phức tạp bằng Ant Design Form?",
+    "tags": ["AntDesign", "Form"],
+    "views": 140,
+    "answersCount": 3,
+    "createdAt": "2026-05-18T15:10:00Z"
+  },
+  {
+    "id": "9",
+    "title": "Sự khác biệt giữa Axios và Fetch API trong việc xử lý HTTP Request?",
+    "tags": ["JavaScript", "Axios"],
+    "views": 280,
+    "answersCount": 4,
+    "createdAt": "2026-05-15T13:00:00Z"
+  },
+  {
+    "id": "10",
+    "title": "Lỗi 'Hydration failed because the initial UI does not match' xử lý thế nào?",
+    "tags": ["NextJS", "React"],
+    "views": 610,
+    "answersCount": 0,
+    "createdAt": "2026-05-12T18:25:00Z"
   }
 ]
