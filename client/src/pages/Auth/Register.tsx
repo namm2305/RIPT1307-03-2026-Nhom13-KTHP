@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Lock, Check, AlertCircle, ArrowRight, Eye, EyeOff, BookOpen, Hash } from 'lucide-react';
+import { UserOutlined, MailOutlined, LockOutlined, CheckOutlined, ExclamationCircleOutlined, ArrowRightOutlined, EyeOutlined, EyeInvisibleOutlined, BookOutlined, NumberOutlined } from '@ant-design/icons';
 
 const FACULTIES = [
   'Khoa Công nghệ Thông tin 1',
@@ -220,35 +220,35 @@ const Register: React.FC = () => {
             <div style={styles.group}>
               <label style={styles.label}>Họ và tên</label>
               <div className={`input-wrap${nameError ? ' input-err' : ''}`} style={styles.inputWrap}>
-                <User size={17} style={nameError ? styles.iconErr : styles.icon} />
+                <UserOutlined style={{ fontSize: 17, ...(nameError ? styles.iconErr : styles.icon) }} />
                 <input
                   type="text" placeholder="Nhập họ và tên đầy đủ..."
                   value={name} onChange={e => { setName(e.target.value); validateName(e.target.value); }}
                   style={styles.input} disabled={isLoading}
                 />
               </div>
-              {nameError && <div className="shake" style={styles.err}><AlertCircle size={13} /><span>{nameError}</span></div>}
+              {nameError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }} /><span>{nameError}</span></div>}
             </div>
 
             {/* Email */}
             <div style={styles.group}>
               <label style={styles.label}>Địa chỉ Email</label>
               <div className={`input-wrap${emailError ? ' input-err' : ''}`} style={styles.inputWrap}>
-                <Mail size={17} style={emailError ? styles.iconErr : styles.icon} />
+                <MailOutlined style={{ fontSize: 17, ...(emailError ? styles.iconErr : styles.icon) }} />
                 <input
                   type="email" placeholder={role === 'lecturer' ? 'Nhập email giảng viên...' : 'Nhập email sinh viên...'}
                   value={email} onChange={e => { setEmail(e.target.value); validateEmail(e.target.value); }}
                   style={styles.input} disabled={isLoading}
                 />
               </div>
-              {emailError && <div className="shake" style={styles.err}><AlertCircle size={13} /><span>{emailError}</span></div>}
+              {emailError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }} /><span>{emailError}</span></div>}
             </div>
 
             {/* Mã sinh viên / Mã GV */}
             <div style={styles.group}>
               <label style={styles.label}>{role === 'lecturer' ? 'Mã giảng viên' : 'Mã sinh viên'} <span style={styles.optional}>(tuỳ chọn)</span></label>
               <div className="input-wrap" style={styles.inputWrap}>
-                <Hash size={17} style={styles.icon} />
+                <NumberOutlined style={{ fontSize: 17, ...(styles.icon as any) }} />
                 <input
                   type="text" placeholder={role === 'lecturer' ? 'VD: GV12345' : 'VD: B21DCCN123'}
                   value={studentId} onChange={e => setStudentId(e.target.value)}
@@ -261,7 +261,7 @@ const Register: React.FC = () => {
             <div style={styles.group}>
               <label style={styles.label}>Khoa / Đơn vị</label>
               <div className="input-wrap" style={styles.inputWrap}>
-                <BookOpen size={17} style={styles.icon} />
+                <BookOutlined style={{ fontSize: 17, ...(styles.icon as any) }} />
                 <select
                   value={faculty} onChange={e => setFaculty(e.target.value)}
                   style={{ ...styles.input, cursor:'pointer' }}
@@ -276,7 +276,7 @@ const Register: React.FC = () => {
             <div style={styles.group}>
               <label style={styles.label}>Mật khẩu</label>
               <div className={`input-wrap${passwordError ? ' input-err' : ''}`} style={styles.inputWrap}>
-                <Lock size={17} style={passwordError ? styles.iconErr : styles.icon} />
+                <LockOutlined style={{ fontSize: 17, ...(passwordError ? styles.iconErr : styles.icon) }} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Tối thiểu 6 ký tự..."
@@ -284,7 +284,7 @@ const Register: React.FC = () => {
                   style={styles.input} disabled={isLoading}
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} style={styles.eyeBtn} tabIndex={-1}>
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  {showPassword ? <EyeInvisibleOutlined style={{ fontSize: 17 }} /> : <EyeOutlined style={{ fontSize: 17 }} />}
                 </button>
               </div>
               {password && (
@@ -303,20 +303,20 @@ const Register: React.FC = () => {
                       [pwdReqs.numberOrSpecial, 'Số hoặc ký tự đặc biệt'],
                     ].map(([ok, text]) => (
                       <span key={text as string} style={{ display:'flex', alignItems:'center', gap:'4px', fontSize:'11px', color: ok ? '#52c41a' : '#64748b' }}>
-                        <Check size={11} />{text as string}
+                        <CheckOutlined style={{ fontSize: 11 }} />{text as string}
                       </span>
                     ))}
                   </div>
                 </div>
               )}
-              {passwordError && !password && <div className="shake" style={styles.err}><AlertCircle size={13} /><span>{passwordError}</span></div>}
+              {passwordError && !password && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }} /><span>{passwordError}</span></div>}
             </div>
 
             {/* Xác nhận mật khẩu */}
             <div style={styles.group}>
               <label style={styles.label}>Xác nhận mật khẩu</label>
               <div className={`input-wrap${confirmPasswordError ? ' input-err' : ''}`} style={styles.inputWrap}>
-                <Lock size={17} style={confirmPasswordError ? styles.iconErr : styles.icon} />
+                <LockOutlined style={{ fontSize: 17, ...(confirmPasswordError ? styles.iconErr : styles.icon) }} />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Nhập lại mật khẩu..."
@@ -324,16 +324,16 @@ const Register: React.FC = () => {
                   style={styles.input} disabled={isLoading}
                 />
                 <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeBtn} tabIndex={-1}>
-                  {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  {showConfirmPassword ? <EyeInvisibleOutlined style={{ fontSize: 17 }} /> : <EyeOutlined style={{ fontSize: 17 }} />}
                 </button>
               </div>
-              {confirmPasswordError && <div className="shake" style={styles.err}><AlertCircle size={13} /><span>{confirmPasswordError}</span></div>}
+              {confirmPasswordError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }} /><span>{confirmPasswordError}</span></div>}
             </div>
 
             {/* Server error */}
             {serverError && (
               <div style={{ ...styles.err, padding:'10px 14px', background:'rgba(255,77,79,0.1)', borderRadius:'8px', marginTop:'-4px' }}>
-                <AlertCircle size={14} /><span>{serverError}</span>
+                <ExclamationCircleOutlined style={{ fontSize: 14 }} /><span>{serverError}</span>
               </div>
             )}
 
@@ -350,7 +350,7 @@ const Register: React.FC = () => {
                 </div>
               ) : (
                 <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'6px' }}>
-                  <span>Đăng Ký Ngay</span><ArrowRight size={17} />
+                  <span>Đăng Ký Ngay</span><ArrowRightOutlined style={{ fontSize: 17 }} />
                 </div>
               )}
             </button>

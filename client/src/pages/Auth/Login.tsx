@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { MailOutlined, LockOutlined, ArrowRightOutlined, ExclamationCircleOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 
 const API_BASE = 'http://localhost:5050/api';
 
@@ -125,7 +125,7 @@ const Login: React.FC = () => {
             {/* Server error banner */}
             {serverError && (
               <div className="shake" style={{ display:'flex', alignItems:'center', gap:'8px', padding:'10px 14px', background:'rgba(255,77,79,0.12)', border:'1px solid rgba(255,77,79,0.3)', borderRadius:'9px', color:'#ff7875', fontSize:'13.5px' }}>
-                <AlertCircle size={15} /><span>{serverError}</span>
+                <ExclamationCircleOutlined style={{ fontSize: 15 }} /><span>{serverError}</span>
               </div>
             )}
 
@@ -133,7 +133,7 @@ const Login: React.FC = () => {
             <div style={styles.group}>
               <label style={styles.label}>Địa chỉ Email</label>
               <div className={`input-wrap${emailError ? ' input-err' : ''}`} style={styles.inputWrap}>
-                <Mail size={17} style={emailError ? styles.iconErr : styles.icon} />
+                <MailOutlined style={{ fontSize: 17, ...(emailError ? styles.iconErr : styles.icon) }} />
                 <input
                   type="email" placeholder="Nhập email của bạn..."
                   value={email}
@@ -142,14 +142,14 @@ const Login: React.FC = () => {
                   style={styles.input} disabled={isLoading}
                 />
               </div>
-              {emailError && <div className="shake" style={styles.err}><AlertCircle size={13}/><span>{emailError}</span></div>}
+              {emailError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }}/><span>{emailError}</span></div>}
             </div>
 
             {/* Password */}
             <div style={styles.group}>
               <label style={styles.label}>Mật khẩu</label>
               <div className={`input-wrap${passwordError ? ' input-err' : ''}`} style={styles.inputWrap}>
-                <Lock size={17} style={passwordError ? styles.iconErr : styles.icon} />
+                <LockOutlined style={{ fontSize: 17, ...(passwordError ? styles.iconErr : styles.icon) }} />
                 <input
                   type={showPassword ? 'text' : 'password'} placeholder="Nhập mật khẩu..."
                   value={password}
@@ -158,10 +158,10 @@ const Login: React.FC = () => {
                   style={styles.input} disabled={isLoading}
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} style={styles.eyeBtn} tabIndex={-1}>
-                  {showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}
+                  {showPassword ? <EyeInvisibleOutlined style={{ fontSize: 17 }}/> : <EyeOutlined style={{ fontSize: 17 }}/>}
                 </button>
               </div>
-              {passwordError && <div className="shake" style={styles.err}><AlertCircle size={13}/><span>{passwordError}</span></div>}
+              {passwordError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }}/><span>{passwordError}</span></div>}
             </div>
 
             {/* Remember + Forgot */}
@@ -188,7 +188,7 @@ const Login: React.FC = () => {
                 </div>
               ) : (
                 <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'6px' }}>
-                  <span>Đăng Nhập</span><ArrowRight size={17}/>
+                  <span>Đăng Nhập</span><ArrowRightOutlined style={{ fontSize: 17 }}/>
                 </div>
               )}
             </button>
