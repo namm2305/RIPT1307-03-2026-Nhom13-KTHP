@@ -3,7 +3,7 @@ import { Card, Table, Typography, Spin, Tag } from 'antd';
 import axios from 'axios';
 
 const { Title, Text } = Typography;
-const API_BASE = 'http://localhost:5050/api';
+import { API_BASE } from '../../../config/api';
 
 const ActivityLogTab: React.FC = () => {
   const token = localStorage.getItem('token');

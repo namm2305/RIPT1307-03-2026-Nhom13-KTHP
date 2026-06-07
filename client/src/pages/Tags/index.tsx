@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const { Title, Text, Paragraph } = Typography;
-const API_BASE = 'http://localhost:5050/api';
+import { API_BASE } from '../../config/api';
 
 const Tags: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

@@ -8,7 +8,7 @@ import axios from 'axios';
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 
-const API_BASE = 'http://localhost:5050/api';
+import { API_BASE } from '../config/api';
 
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();

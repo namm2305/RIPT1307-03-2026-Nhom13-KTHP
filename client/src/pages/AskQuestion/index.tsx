@@ -4,7 +4,7 @@ import { SendOutlined, BulbOutlined, EditOutlined, TagOutlined, InfoCircleOutlin
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
-const API_BASE = 'http://localhost:5050/api';
+import { API_BASE } from '../../config/api';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;

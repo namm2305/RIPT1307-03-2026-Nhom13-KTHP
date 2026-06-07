@@ -11,7 +11,7 @@ import QuestionContent from './components/QuestionContent';
 import AnswerList from './components/AnswerList';
 import AnswerForm from './components/AnswerForm';
 
-const API_URL = 'http://localhost:5050/api';
+import { API_BASE as API_URL } from '../../config/api';
 
 const QuestionDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();

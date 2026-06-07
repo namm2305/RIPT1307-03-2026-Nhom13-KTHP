@@ -5,7 +5,7 @@ import axios from 'axios';
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;
-const API_BASE = 'http://localhost:5050/api';
+import { API_BASE } from '../../../config/api';
 
 const QuestionsTab: React.FC = () => {
   const token = localStorage.getItem('token');

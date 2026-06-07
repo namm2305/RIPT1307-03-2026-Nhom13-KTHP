@@ -5,7 +5,7 @@ import { Pie, Column } from '@ant-design/charts';
 import axios from 'axios';
 
 const { Title } = Typography;
-const API_BASE = 'http://localhost:5050/api';
+import { API_BASE } from '../../../config/api';
 
 const OverviewTab: React.FC = () => {
   const [stats, setStats] = useState<any>(null);

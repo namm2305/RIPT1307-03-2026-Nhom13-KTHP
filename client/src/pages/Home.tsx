@@ -15,6 +15,7 @@ import {
   RocketOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
 const { Title, Paragraph, Text } = Typography;
@@ -44,7 +45,7 @@ const Home: React.FC = () => {
 
     const fetchQuestions = async () => {
       try {
-        const res = await axios.get('http://localhost:5050/api/questions');
+        const res = await axios.get(`${API_BASE}/questions`);
         if (res.data && res.data.questions) {
           setQuestions(res.data.questions.map((q: any) => ({
             ...q,

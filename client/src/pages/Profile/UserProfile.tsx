@@ -12,7 +12,7 @@ import {
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-const API_BASE = 'http://localhost:5050/api';
+import { API_BASE } from '../../config/api';
 
 const ROLE_CONFIG: Record<string, { color: string; bg: string; label: string; icon: React.ReactNode }> = {
   admin:      { color: '#fff',    bg: '#f5222d', label: 'Quản trị viên',    icon: <SafetyCertificateOutlined /> },

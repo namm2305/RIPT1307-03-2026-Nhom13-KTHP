@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MailOutlined, LockOutlined, ArrowRightOutlined, ExclamationCircleOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 
-const API_BASE = 'http://localhost:5050/api';
+import { API_BASE } from '../../config/api';
 
 import { useAuth } from '../../context/AuthContext';
 

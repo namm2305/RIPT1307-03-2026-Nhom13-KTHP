@@ -6,7 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;
-const API_BASE = 'http://localhost:5050/api';
+import { API_BASE } from '../../../config/api';
 
 const ROLE_MAP: Record<string, { label: string; color: string }> = {
   admin:     { label: 'Quản trị viên', color: 'red' },
