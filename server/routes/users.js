@@ -66,7 +66,7 @@ router.get('/:id', protect, async (req, res) => {
         }
 
         if (user && user.avatar && (user.avatar.includes('T%E1%BA%ADp_tin:Logo_PTIT') || user.avatar.includes('portal.ptit.edu.vn') || user.avatar.includes('Tập_tin:Logo_PTIT') || user.avatar.includes('wikimedia.org'))) {
-            user.avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJUAAACUCAMAAACtIJvYAAAA2FBMVEX
+            user.avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJUAAACUCAMAAACtIJvYAAAA2FBMVEX';
             await user.save({ validateBeforeSave: false });
         }
 
