@@ -1,13 +1,57 @@
 import React from 'react';
-import { Layout, Menu, Button, Space, Typography } from 'antd';
+import { Layout, Menu, Button, Space, Typography, Dropdown, Avatar, Spin, message } from 'antd';
+import type { MenuProps } from 'antd';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { MessageOutlined, UserOutlined, LoginOutlined } from '@ant-design/icons';
+import { MessageOutlined, UserOutlined, LoginOutlined, LogoutOutlined, DownOutlined } from '@ant-design/icons';
+import { useAuth } from '../context/AuthContext';
 
 const { Header, Content, Footer } = Layout;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
+  const { user, loading, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    message.success('Đăng xuất thành công!');
+    navigate('/');
+  };
+
+  const dropdownItems: MenuProps['items'] = [
+    {
+      key: 'profile_info',
+      label: (
+        <div style={{ padding: '4px 8px', minWidth: '160px' }}>
+          <div style={{ fontWeight: 'bold', color: '#1d1d1d' }}>{user?.name}</div>
+          <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '2px' }}>
+            {user?.role === 'student' ? 'Sinh viên' : user?.role === 'teacher' ? 'Giảng viên' : 'Quản trị viên'}
+            {user?.faculty ? ` • ${user?.faculty}` : ''}
+          </div>
+        </div>
+      ),
+      disabled: true,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'logout',
+      danger: true,
+      icon: <LogoutOutlined />,
+      label: 'Đăng xuất',
+      onClick: handleLogout,
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: 16 }}>
+        <Spin size="large" />
+        <Text type="secondary">Đang kết nối hệ thống...</Text>
+      </div>
+    );
+  }
 
   return (
     <Layout style={{ minHeight: '100vh', backgroundColor: '#f0f2f5' }}>
@@ -23,9 +67,9 @@ const MainLayout: React.FC = () => {
         backgroundColor: '#001529',
         padding: '0 24px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }} onClick={() => navigate('/')}>
-          <MessageOutlined style={{ fontSize: '24px', color: '#1890ff', cursor: 'pointer' }} />
-          <Title level={4} style={{ color: '#fff', margin: 0, cursor: 'pointer', fontSize: '18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <MessageOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+          <Title level={4} style={{ color: '#fff', margin: 0, fontSize: '18px' }}>
             PTIT Q&A Forum
           </Title>
         </div>
@@ -42,9 +86,24 @@ const MainLayout: React.FC = () => {
         />
 
         <Space>
-          <Button type="primary" icon={<LoginOutlined />} onClick={() => navigate('/login')}>
-            Đăng nhập
-          </Button>
+          {user ? (
+            <Dropdown menu={{ items: dropdownItems }} trigger={['click']} placement="bottomRight">
+              <Space style={{ cursor: 'pointer', color: '#fff' }}>
+                <Avatar 
+                  style={{ backgroundColor: '#1890ff' }} 
+                  icon={<UserOutlined />}
+                />
+                <Text style={{ color: '#fff', maxWidth: '120px' }} ellipsis>
+                  {user.name}
+                </Text>
+                <DownOutlined style={{ fontSize: '10px', color: 'rgba(255,255,255,0.45)' }} />
+              </Space>
+            </Dropdown>
+          ) : (
+            <Button type="primary" icon={<LoginOutlined />} onClick={() => navigate('/login')}>
+              Đăng nhập
+            </Button>
+          )}
         </Space>
       </Header>
 
