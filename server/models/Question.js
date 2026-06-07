@@ -36,6 +36,10 @@ const questionSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    viewers: [{
+        type: mongoose.Schema.ObjectId,
+        ref: 'User'
+    }],
     acceptedAnswer: {
         type: mongoose.Schema.ObjectId,
         ref: 'Comment',
@@ -49,8 +53,16 @@ const questionSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    // Dành cho giảng viên / admin đánh dấu câu hỏi hay
+    subject: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'Subject',
+        default: null
+    },
     isPinned: {
+        type: Boolean,
+        default: false
+    },
+    isSolved: {
         type: Boolean,
         default: false
     },
@@ -67,7 +79,6 @@ const questionSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// Virtual: đếm số câu trả lời
 questionSchema.virtual('answersCount', {
     ref: 'Comment',
     localField: '_id',
@@ -75,22 +86,18 @@ questionSchema.virtual('answersCount', {
     count: true
 });
 
-// Virtual: danh sách câu trả lời
 questionSchema.virtual('answers', {
     ref: 'Comment',
     localField: '_id',
     foreignField: 'question',
     justOne: false,
-    match: { parentComment: null } // Chỉ lấy câu trả lời gốc, không phải reply
+    match: { parentComment: null } 
 });
 
-// Cập nhật updatedAt trước khi save
-questionSchema.pre('save', function (next) {
-    this.updatedAt = new Date();
-    next();
+questionSchema.pre('save', function () {
+    this.updatedAt = Date.now();
 });
 
-// Index tìm kiếm
 questionSchema.index({ title: 'text', content: 'text' });
 questionSchema.index({ tags: 1 });
 questionSchema.index({ author: 1 });

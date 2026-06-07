@@ -1,31 +1,51 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Typography, Input, Row, Col, Button, Space, Tag, Badge, Divider } from 'antd';
 import { SearchOutlined, FireFilled, RiseOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import tagsData from '../../mocks/tagsData.json';
+import axios from 'axios';
 
 const { Title, Text, Paragraph } = Typography;
+const API_BASE = 'http://localhost:5050/api';
 
 const Tags: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'popular' | 'name' | 'newest'>('popular');
+  const [tagsData, setTagsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/questions/tags`);
+        if (res.data.success) {
+          setTagsData(res.data.tags || []);
+        }
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTags();
+  }, []);
+
   const filteredTags = useMemo(() => {
+    if (!tagsData || !Array.isArray(tagsData)) return [];
+
     let result = tagsData.filter(tag => 
-      tag.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tag.description.toLowerCase().includes(searchTerm.toLowerCase())
+      (tag?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tag?.description || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (sortBy === 'popular') {
-      result = result.sort((a, b) => b.count - a.count);
+      result = result.sort((a, b) => (b?.count || 0) - (a?.count || 0));
     } else if (sortBy === 'name') {
-      result = result.sort((a, b) => a.name.localeCompare(b.name));
+      result = result.sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));
     }
     return result;
-  }, [searchTerm, sortBy]);
+  }, [searchTerm, sortBy, tagsData]);
 
-  // Group by category
   const groupedTags = useMemo(() => {
     const groups: { [key: string]: typeof tagsData } = {};
     filteredTags.forEach(tag => {
@@ -79,7 +99,11 @@ const Tags: React.FC = () => {
         </Space>
       </div>
 
-      {Object.keys(groupedTags).length === 0 ? (
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: '#8c8c8c' }}>
+          Đang tải thẻ môn học...
+        </div>
+      ) : Object.keys(groupedTags).length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#8c8c8c' }}>
           <Title level={4} type="secondary">Không tìm thấy thẻ nào phù hợp với "{searchTerm}"</Title>
         </div>

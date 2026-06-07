@@ -18,7 +18,6 @@ const MainLayout: React.FC = () => {
       
       <Content style={{ padding: '24px 50px', background: '#f5f5f5' }}>
         <div style={{ background: '#fff', padding: '24px', minHeight: '80vh', borderRadius: '8px' }}>
-          {/* Vùng trống rỗng để các page khác hiển thị ở đây */}
           <Outlet />
         </div>
       </Content>

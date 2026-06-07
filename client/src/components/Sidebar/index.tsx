@@ -1,32 +1,35 @@
-import React from 'react';
-import { Card, List, Tag, Avatar, Typography, Space, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, List, Tag, Avatar, Typography, Space, Spin } from 'antd';
 import { FireOutlined, TrophyOutlined, UserOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
-const { Title, Text } = Typography;
-
-// Mock data
-const popularTags = [
-  { id: '1', name: 'ReactJS', count: 128 },
-  { id: '2', name: 'Toán cao cấp', count: 85 },
-  { id: '3', name: 'Lập trình C++', count: 64 },
-  { id: '4', name: 'Cấu trúc dữ liệu', count: 52 },
-  { id: '5', name: 'Machine Learning', count: 41 },
-];
-
-const topContributors = [
-  { id: '1', name: 'Nguyễn Văn A', points: 1540, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' },
-  { id: '2', name: 'Trần Thị B', points: 1230, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka' },
-  { id: '3', name: 'Lê Hoàng C', points: 985, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jude' },
-  { id: '4', name: 'Phạm Minh D', points: 840, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Leo' },
-  { id: '5', name: 'Vũ Đức E', points: 720, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eden' },
-];
+const { Text } = Typography;
+const API_BASE = 'http://localhost:5050/api';
 
 const Sidebar: React.FC = () => {
+  const [popularTags, setPopularTags] = useState<any[]>([]);
+  const [loadingTags, setLoadingTags] = useState(true);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/questions/tags`);
+        if (res.data.success) {
+          setPopularTags(res.data.tags.slice(0, 5));
+        }
+      } catch (error) {
+        console.error('Error fetching popular tags:', error);
+      } finally {
+        setLoadingTags(false);
+      }
+    };
+    fetchTags();
+  }, []);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Widget: Tags phổ biến */}
       <Card 
         title={
           <Space>
@@ -37,46 +40,26 @@ const Sidebar: React.FC = () => {
         styles={{ body: { padding: '12px 20px' }, header: { padding: '0 20px', minHeight: '48px' } }}
         style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
       >
-        <List
-          itemLayout="horizontal"
-          dataSource={popularTags}
-          renderItem={(item) => (
-            <List.Item style={{ padding: '8px 0', border: 'none' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                <Link to={`/tags/${item.id}`}>
-                  <Tag color="blue" style={{ cursor: 'pointer' }}>{item.name}</Tag>
-                </Link>
-                <Text type="secondary" style={{ fontSize: '12px' }}>x {item.count}</Text>
-              </div>
-            </List.Item>
-          )}
-        />
-      </Card>
-
-      {/* Widget: Bảng xếp hạng */}
-      <Card 
-        title={
-          <Space>
-            <TrophyOutlined style={{ color: '#fadb14' }} />
-            <Text strong>Đóng góp nhiều nhất</Text>
-          </Space>
-        }
-        styles={{ body: { padding: '12px 20px' }, header: { padding: '0 20px', minHeight: '48px' } }}
-        style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
-      >
-        <List
-          itemLayout="horizontal"
-          dataSource={topContributors}
-          renderItem={(item, index) => (
-            <List.Item style={{ padding: '12px 0', borderBottom: index === topContributors.length - 1 ? 'none' : '1px solid #f0f0f0' }}>
-              <List.Item.Meta
-                avatar={<Avatar src={item.avatar} icon={<UserOutlined />} />}
-                title={<Link to={`/user/${item.id}`} style={{ color: '#1d1d1d', fontWeight: 500 }}>{item.name}</Link>}
-                description={<Text type="secondary" style={{ fontSize: '12px' }}>{item.points} điểm</Text>}
-              />
-            </List.Item>
-          )}
-        />
+        {loadingTags ? (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}><Spin size="small" /></div>
+        ) : popularTags.length === 0 ? (
+          <Text type="secondary">Chưa có thẻ nào.</Text>
+        ) : (
+          <List
+            itemLayout="horizontal"
+            dataSource={popularTags}
+            renderItem={(item) => (
+              <List.Item style={{ padding: '8px 0', border: 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                  <Link to={`/tags/${item.name}`}>
+                    <Tag color="blue" style={{ cursor: 'pointer' }}>{item.name}</Tag>
+                  </Link>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>x {item.count}</Text>
+                </div>
+              </List.Item>
+            )}
+          />
+        )}
       </Card>
 
     </div>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Card, Tag, Space, Typography, Avatar, Divider } from 'antd';
-import { UserOutlined, ClockCircleOutlined, EyeOutlined } from '@ant-design/icons';
+import { Card, Tag, Space, Typography, Avatar, Divider, Button } from 'antd';
+import { Link } from 'react-router-dom';
+import { UserOutlined, ClockCircleOutlined, EyeOutlined, DeleteOutlined, PushpinOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import VoteButton from './VoteButton';
 
 const { Title, Paragraph, Text } = Typography;
@@ -18,10 +19,16 @@ interface QuestionContentProps {
         createdAt: string;
     };
     currentUserId: string | null;
+    currentUserRole?: string;
     onVote: (type: 'up' | 'down') => void;
+    onDelete?: () => void;
+    onToggleClose?: (isClosed: boolean) => void;
+    onTogglePin?: (isPinned: boolean) => void;
 }
 
-const QuestionContent: React.FC<QuestionContentProps> = ({ question, currentUserId, onVote }) => {
+const QuestionContent: React.FC<QuestionContentProps> = ({ 
+    question, currentUserId, currentUserRole, onVote, onDelete, onToggleClose, onTogglePin 
+}) => {
     const getUserVote = (): 'up' | 'down' | null => {
         if (!currentUserId) return null;
         const vote = question.voters?.find(v => v.user === currentUserId);
@@ -38,19 +45,48 @@ const QuestionContent: React.FC<QuestionContentProps> = ({ question, currentUser
 
     return (
         <Card style={{ borderRadius: '8px' }}>
-            <Title level={3} style={{ marginTop: 0, marginBottom: '16px' }}>
-                {question.title}
-            </Title>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Title level={3} style={{ marginTop: 0, marginBottom: '16px' }}>
+                    {question.isPinned && <PushpinOutlined style={{ color: '#eb2f96', marginRight: 8 }} />}
+                    {question.title}
+                </Title>
+                <Space>
+                    {(currentUserRole === 'admin' || currentUserRole === 'moderator' || currentUserRole === 'lecturer') && (
+                        <Button 
+                            size="small" 
+                            type="dashed"
+                            icon={question.isPinned ? <PushpinOutlined /> : <PushpinOutlined />}
+                            onClick={() => onTogglePin?.(!question.isPinned)}
+                        >
+                            {question.isPinned ? 'Bỏ ghim' : 'Ghim'}
+                        </Button>
+                    )}
+                    {(currentUserId === question.author._id || currentUserRole === 'admin' || currentUserRole === 'moderator' || currentUserRole === 'lecturer') && (
+                        <Button 
+                            size="small" 
+                            danger 
+                            icon={<DeleteOutlined />}
+                            onClick={() => onDelete?.()}
+                        >
+                            Xóa
+                        </Button>
+                    )}
+                </Space>
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                 <Space size="small">
-                    <Avatar src={question.author.avatar} icon={<UserOutlined />} />
+                    <Link to={`/user/${question.author._id}`}>
+                        <Avatar src={question.author.avatar} icon={<UserOutlined />} style={{ cursor: 'pointer' }} />
+                    </Link>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Text strong style={{ fontSize: '15px' }}>{question.author.name}</Text>
+                            <Link to={`/user/${question.author._id}`}>
+                                <Text strong style={{ fontSize: '15px', color: '#262626' }} className="hover-link">{question.author.name}</Text>
+                            </Link>
                             {question.author.role && (
-                                <Tag color={question.author.role === 'teacher' ? 'gold' : 'blue'}>
-                                    {question.author.role === 'teacher' ? 'Giảng viên' : 'Sinh viên'}
+                                <Tag color={question.author.role === 'lecturer' ? 'gold' : question.author.role === 'admin' ? 'red' : question.author.role === 'moderator' ? 'purple' : 'blue'}>
+                                    {question.author.role === 'lecturer' ? 'Giảng viên' : question.author.role === 'admin' ? 'Quản trị viên' : question.author.role === 'moderator' ? 'Kiểm duyệt viên' : 'Sinh viên'}
                                 </Tag>
                             )}
                         </div>

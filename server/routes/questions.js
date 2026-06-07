@@ -3,13 +3,36 @@ const router = express.Router();
 const Question = require('../models/Question');
 const Comment = require('../models/Comment');
 const User = require('../models/User');
+const Subject = require('../models/Subject');
+const Notification = require('../models/Notification');
+const mongoose = require('mongoose');
 const { protect, authorize } = require('../middleware/auth');
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Lấy danh sách câu hỏi (có filter, search, phân trang)
-// @route   GET /api/questions
-// @access  Public
-// ─────────────────────────────────────────────────────────────
+const sendNotificationToFollowers = async (question, senderId, type, message, link) => {
+    const recipients = new Set();
+    if (question.author) recipients.add(question.author.toString());
+    
+    if (Array.isArray(question.voters)) {
+        question.voters.forEach(v => {
+            if (v.type === 'up' && v.user) recipients.add(v.user.toString());
+        });
+    }
+
+    if (senderId) recipients.delete(senderId.toString());
+
+    const notifications = Array.from(recipients).map(userId => ({
+        user: userId,
+        sender: senderId,
+        type,
+        message,
+        link
+    }));
+
+    if (notifications.length > 0) {
+        await Notification.insertMany(notifications);
+    }
+};
+
 router.get('/', async (req, res) => {
     try {
         const { tag, search, sort = 'latest', page = 1, limit = 10, author } = req.query;
@@ -45,11 +68,21 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Lấy chi tiết 1 câu hỏi + câu trả lời
-// @route   GET /api/questions/:id
-// @access  Public
-// ─────────────────────────────────────────────────────────────
+router.get('/tags', async (req, res) => {
+    try {
+        const tags = await Question.aggregate([
+            { $unwind: "$tags" },
+            { $group: { _id: "$tags", count: { $sum: 1 } } },
+            { $project: { _id: 0, id: "$_id", name: "$_id", count: 1, description: { $concat: ["Thẻ thảo luận về ", "$_id"] } } },
+            { $sort: { count: -1 } }
+        ]);
+        return res.status(200).json({ success: true, tags });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     try {
         const question = await Question.findById(req.params.id)
@@ -67,8 +100,26 @@ router.get('/:id', async (req, res) => {
             return res.status(404).json({ success: false, message: 'Không tìm thấy câu hỏi' });
         }
 
-        // Tăng lượt xem
-        await Question.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } });
+        const jwt = require('jsonwebtoken');
+        let userId = null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            const token = req.headers.authorization.split(' ')[1];
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                userId = decoded.id;
+            } catch (err) {}
+        }
+
+        if (userId) {
+            if (!question.viewers.includes(userId)) {
+                question.viewers.push(userId);
+                question.viewCount += 1;
+                await question.save();
+            }
+        } else {
+            question.viewCount += 1;
+            await question.save();
+        }
 
         return res.status(200).json({ success: true, question });
     } catch (error) {
@@ -76,27 +127,37 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Đăng câu hỏi mới
-// @route   POST /api/questions
-// @access  Private (mọi user đã đăng nhập)
-// ─────────────────────────────────────────────────────────────
 router.post('/', protect, async (req, res) => {
     try {
-        const { title, content, tags } = req.body;
+        const { title, content, tags, subject } = req.body;
 
         if (!title || !content) {
             return res.status(400).json({ success: false, message: 'Vui lòng nhập tiêu đề và nội dung' });
+        }
+
+        let subjectId = null;
+        if (subject) {
+            if (mongoose.Types.ObjectId.isValid(subject)) {
+                subjectId = subject;
+            } else {
+                const newCode = 'NEW-' + String(Date.now()).slice(-5);
+                const newSubject = await Subject.create({
+                    code: newCode,
+                    name: subject,
+                    isActive: true
+                });
+                subjectId = newSubject._id;
+            }
         }
 
         const question = await Question.create({
             title,
             content,
             tags: tags || [],
+            subject: subjectId,
             author: req.user._id
         });
 
-        // Cộng điểm reputation cho người đăng câu hỏi
         await User.findByIdAndUpdate(req.user._id, { $inc: { reputation: 5 } });
 
         const populated = await question.populate('author', 'name avatar role faculty');
@@ -111,18 +172,13 @@ router.post('/', protect, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Sửa câu hỏi
-// @route   PUT /api/questions/:id
-// @access  Private (chủ sở hữu, moderator, admin)
-// ─────────────────────────────────────────────────────────────
 router.put('/:id', protect, async (req, res) => {
     try {
         const question = await Question.findById(req.params.id);
         if (!question) return res.status(404).json({ success: false, message: 'Không tìm thấy câu hỏi' });
 
         const isOwner = question.author.toString() === req.user._id.toString();
-        const isPrivileged = ['admin', 'moderator'].includes(req.user.role);
+        const isPrivileged = ['admin', 'moderator', 'lecturer'].includes(req.user.role);
 
         if (!isOwner && !isPrivileged) {
             return res.status(403).json({ success: false, message: 'Không có quyền sửa câu hỏi này' });
@@ -134,14 +190,24 @@ router.put('/:id', protect, async (req, res) => {
         if (content) question.content = content;
         if (tags) question.tags = tags;
 
-        // Chỉ moderator/admin mới được đóng/ghim câu hỏi
+        let statusMsg = '';
         if (isPrivileged) {
-            if (isClosed !== undefined) question.isClosed = isClosed;
+            if (isClosed !== undefined && question.isClosed !== isClosed) {
+                question.isClosed = isClosed;
+                statusMsg = isClosed ? 'bị khóa' : 'được mở khóa';
+            }
             if (closedReason !== undefined) question.closedReason = closedReason;
-            if (isPinned !== undefined) question.isPinned = isPinned;
+            if (isPinned !== undefined && question.isPinned !== isPinned) {
+                question.isPinned = isPinned;
+                statusMsg = isPinned ? 'được ghim' : 'bị bỏ ghim';
+            }
         }
 
         await question.save();
+
+        if (statusMsg) {
+            await sendNotificationToFollowers(question, req.user._id, 'QUESTION_UPDATED', `Câu hỏi "${question.title}" vừa ${statusMsg} bởi quản trị viên.`, `/question/${question._id}`);
+        }
 
         return res.status(200).json({ success: true, question });
     } catch (error) {
@@ -149,14 +215,9 @@ router.put('/:id', protect, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Vote câu hỏi
-// @route   PUT /api/questions/:id/vote
-// @access  Private
-// ─────────────────────────────────────────────────────────────
 router.put('/:id/vote', protect, async (req, res) => {
     try {
-        const { type } = req.body; // 'up' | 'down'
+        const { type } = req.body; 
         if (!['up', 'down'].includes(type)) {
             return res.status(400).json({ success: false, message: 'Loại vote không hợp lệ' });
         }
@@ -169,11 +230,9 @@ router.put('/:id/vote', protect, async (req, res) => {
 
         if (existingVote) {
             if (existingVote.type === type) {
-                // Bỏ vote
                 question.voters = question.voters.filter(v => v.user.toString() !== userId.toString());
                 question.votes += type === 'up' ? -1 : 1;
             } else {
-                // Đổi vote
                 existingVote.type = type;
                 question.votes += type === 'up' ? 2 : -2;
             }
@@ -184,27 +243,46 @@ router.put('/:id/vote', protect, async (req, res) => {
 
         await question.save();
 
+        if (type === 'up' && (!existingVote || existingVote.type !== 'up')) {
+            if (question.author.toString() !== req.user._id.toString()) {
+                await Notification.create({
+                    user: question.author,
+                    sender: req.user._id,
+                    type: 'QUESTION_VOTED',
+                    message: `Một người dùng đã thích câu hỏi của bạn.`,
+                    link: `/question/${question._id}`
+                });
+            }
+        }
+
         return res.status(200).json({ success: true, votes: question.votes });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Lỗi server' });
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Xoá câu hỏi
-// @route   DELETE /api/questions/:id
-// @access  Private (chủ sở hữu, moderator, admin)
-// ─────────────────────────────────────────────────────────────
 router.delete('/:id', protect, async (req, res) => {
     try {
         const question = await Question.findById(req.params.id);
         if (!question) return res.status(404).json({ success: false, message: 'Không tìm thấy câu hỏi' });
 
         const isOwner = question.author.toString() === req.user._id.toString();
-        const isPrivileged = ['admin', 'moderator'].includes(req.user.role);
+        const isPrivileged = ['admin', 'moderator', 'lecturer'].includes(req.user.role);
 
         if (!isOwner && !isPrivileged) {
             return res.status(403).json({ success: false, message: 'Không có quyền xoá câu hỏi này' });
+        }
+
+        const { reason } = req.body;
+
+        if (question.author.toString() !== req.user._id.toString()) {
+            await Notification.create({
+                user: question.author,
+                sender: req.user._id,
+                type: 'SYSTEM_ALERT',
+                message: `Câu hỏi "${question.title}" của bạn đã bị xóa. Lý do: ${reason || 'Không có lý do được cung cấp.'}`,
+                link: `/`
+            });
         }
 
         await Comment.deleteMany({ question: req.params.id });
@@ -216,11 +294,7 @@ router.delete('/:id', protect, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// ANSWERS (Comments) dưới câu hỏi
-// ─────────────────────────────────────────────────────────────
 
-// @route   POST /api/questions/:id/answers
 router.post('/:id/answers', protect, async (req, res) => {
     try {
         const question = await Question.findById(req.params.id);
@@ -237,8 +311,15 @@ router.post('/:id/answers', protect, async (req, res) => {
             parentComment: parentComment || null
         });
 
-        // Cộng điểm reputation
         await User.findByIdAndUpdate(req.user._id, { $inc: { reputation: 10 } });
+
+        await sendNotificationToFollowers(
+            question, 
+            req.user._id, 
+            'NEW_ANSWER', 
+            `Có câu trả lời mới trong câu hỏi "${question.title}".`, 
+            `/question/${question._id}`
+        );
 
         const populated = await answer.populate('author', 'name avatar role faculty reputation');
 
@@ -248,8 +329,6 @@ router.post('/:id/answers', protect, async (req, res) => {
     }
 });
 
-// @route   PUT /api/questions/:id/answers/:answerId/accept
-// Chỉ chủ câu hỏi, lecturer, hoặc admin mới được chấp nhận
 router.put('/:id/answers/:answerId/accept', protect, async (req, res) => {
     try {
         const question = await Question.findById(req.params.id);
@@ -262,7 +341,6 @@ router.put('/:id/answers/:answerId/accept', protect, async (req, res) => {
             return res.status(403).json({ success: false, message: 'Chỉ chủ câu hỏi mới được chấp nhận câu trả lời' });
         }
 
-        // Bỏ accepted cũ
         await Comment.updateMany({ question: req.params.id }, { isAccepted: false });
 
         const answer = await Comment.findByIdAndUpdate(
@@ -276,8 +354,17 @@ router.put('/:id/answers/:answerId/accept', protect, async (req, res) => {
         question.acceptedAnswer = answer._id;
         await question.save();
 
-        // Cộng 15 điểm cho người có câu trả lời được chấp nhận
         await User.findByIdAndUpdate(answer.author, { $inc: { reputation: 15 } });
+
+        if (answer.author.toString() !== req.user._id.toString()) {
+            await Notification.create({
+                user: answer.author,
+                sender: req.user._id,
+                type: 'ACCEPTED_ANSWER',
+                message: `Câu trả lời của bạn đã được tác giả chấp nhận.`,
+                link: `/question/${question._id}`
+            });
+        }
 
         return res.status(200).json({ success: true, message: 'Đã chấp nhận câu trả lời' });
     } catch (error) {
@@ -285,8 +372,6 @@ router.put('/:id/answers/:answerId/accept', protect, async (req, res) => {
     }
 });
 
-// @route   PUT /api/questions/:id/answers/:answerId/verify
-// Chỉ lecturer/admin xác nhận câu trả lời đúng về mặt học thuật
 router.put('/:id/answers/:answerId/verify', protect, authorize('lecturer', 'admin'), async (req, res) => {
     try {
         const answer = await Comment.findByIdAndUpdate(
@@ -297,7 +382,91 @@ router.put('/:id/answers/:answerId/verify', protect, authorize('lecturer', 'admi
 
         if (!answer) return res.status(404).json({ success: false, message: 'Không tìm thấy câu trả lời' });
 
+        const question = await Question.findById(answer.question);
+
+        if (answer.author.toString() !== req.user._id.toString()) {
+            await Notification.create({
+                user: answer.author,
+                sender: req.user._id,
+                type: 'ANSWER_VERIFIED',
+                message: `Câu trả lời của bạn đã được giảng viên duyệt.`,
+                link: `/question/${answer.question}`
+            });
+        }
+
+        if (question) {
+            await sendNotificationToFollowers(
+                question,
+                req.user._id,
+                'ANSWER_VERIFIED',
+                `Một câu trả lời trong câu hỏi "${question.title}" vừa được giảng viên duyệt.`,
+                `/question/${question._id}`
+            );
+        }
+
         return res.status(200).json({ success: true, message: 'Đã xác nhận câu trả lời', answer });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+});
+
+router.put('/:id/answers/:answerId/vote', protect, async (req, res) => {
+    try {
+        const { type } = req.body; 
+        if (!['up', 'down'].includes(type)) {
+            return res.status(400).json({ success: false, message: 'Loại vote không hợp lệ' });
+        }
+
+        const answer = await Comment.findById(req.params.answerId);
+        if (!answer) return res.status(404).json({ success: false, message: 'Không tìm thấy câu trả lời' });
+
+        const userId = req.user._id;
+        const existingVote = answer.voters.find(v => v.user.toString() === userId.toString());
+
+        if (existingVote) {
+            if (existingVote.type === type) {
+                answer.voters = answer.voters.filter(v => v.user.toString() !== userId.toString());
+                answer.votes += type === 'up' ? -1 : 1;
+            } else {
+                existingVote.type = type;
+                answer.votes += type === 'up' ? 2 : -2;
+            }
+        } else {
+            answer.voters.push({ user: userId, type });
+            answer.votes += type === 'up' ? 1 : -1;
+        }
+
+        await answer.save();
+
+        return res.status(200).json({ success: true, votes: answer.votes });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+});
+
+router.delete('/:id/answers/:answerId', protect, async (req, res) => {
+    try {
+        const answer = await Comment.findById(req.params.answerId);
+        if (!answer) return res.status(404).json({ success: false, message: 'Không tìm thấy câu trả lời' });
+
+        const isOwner = answer.author.toString() === req.user._id.toString();
+        const isPrivileged = ['admin', 'moderator', 'lecturer'].includes(req.user.role);
+
+        if (!isOwner && !isPrivileged) {
+            return res.status(403).json({ success: false, message: 'Không có quyền xóa câu trả lời này' });
+        }
+
+        await Comment.deleteMany({ parentComment: answer._id });
+        
+        await Comment.findByIdAndDelete(answer._id);
+
+        const question = await Question.findById(req.params.id);
+        if (question && question.acceptedAnswer && question.acceptedAnswer.toString() === answer._id.toString()) {
+            question.acceptedAnswer = null;
+            await question.save();
+        }
+
+        return res.status(200).json({ success: true, message: 'Đã xóa câu trả lời' });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Lỗi server' });
     }

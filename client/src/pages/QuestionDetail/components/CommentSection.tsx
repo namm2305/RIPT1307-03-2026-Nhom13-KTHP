@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { List, Button, Input, Typography, Space, Avatar } from 'antd';
+import { Link } from 'react-router-dom';
 import { UserOutlined, SendOutlined } from '@ant-design/icons';
 import VoteButton from './VoteButton';
 
@@ -9,7 +10,7 @@ const { TextArea } = Input;
 interface Comment {
     _id: string;
     content: string;
-    author: { _id: string; name: string; avatar?: string };
+    author: { _id: string; name: string; avatar?: string; role?: string };
     votes: number;
     voters: { user: string; type: 'up' | 'down' }[];
     parentComment: string | null;
@@ -74,8 +75,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                     <Space size="small">
-                        <Avatar size="small" src={comment.author.avatar} icon={<UserOutlined />} />
-                        <Text strong style={{ fontSize: '13px' }}>{comment.author.name}</Text>
+                        <Link to={`/user/${comment.author._id}`}>
+                            <Avatar size="small" src={comment.author.avatar} icon={<UserOutlined />} style={{ cursor: 'pointer' }} />
+                        </Link>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Link to={`/user/${comment.author._id}`}>
+                                <Text strong style={{ fontSize: '13px', color: '#262626' }}>{comment.author.name}</Text>
+                            </Link>
+                            {comment.author.role && (
+                                <Tag color={comment.author.role === 'lecturer' ? 'gold' : comment.author.role === 'admin' ? 'red' : comment.author.role === 'moderator' ? 'purple' : 'blue'} style={{ fontSize: '10px', padding: '0 4px', lineHeight: '16px', margin: 0 }}>
+                                    {comment.author.role === 'lecturer' ? 'Giảng viên' : comment.author.role === 'admin' ? 'Quản trị viên' : comment.author.role === 'moderator' ? 'Kiểm duyệt viên' : 'Sinh viên'}
+                                </Tag>
+                            )}
+                        </div>
                         <Text type="secondary" style={{ fontSize: '12px' }}>{formatDate(comment.createdAt)}</Text>
                     </Space>
                     <VoteButton

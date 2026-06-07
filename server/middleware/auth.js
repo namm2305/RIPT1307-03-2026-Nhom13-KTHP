@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Bảo vệ route - yêu cầu đăng nhập
 const protect = async (req, res, next) => {
     let token;
 
@@ -31,7 +30,6 @@ const protect = async (req, res, next) => {
     }
 };
 
-// Phân quyền theo role
 const authorize = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {

@@ -19,7 +19,10 @@ interface Answer {
     content: string;
     author: { _id: string; name: string; avatar?: string; role?: string };
     votes: number;
+    votes: number;
     voters: { user: string; type: 'up' | 'down' }[];
+    isAccepted?: boolean;
+    isVerifiedByLecturer?: boolean;
     createdAt: string;
 }
 
@@ -27,18 +30,28 @@ interface AnswerListProps {
     answers: Answer[];
     comments: Comment[];
     currentUserId: string | null;
+    currentUserRole?: string;
+    questionAuthorId: string;
     onVoteAnswer: (commentId: string, type: 'up' | 'down') => void;
     onAddReply: (answerId: string, content: string, parentCommentId?: string) => void;
     onVoteReply: (commentId: string, type: 'up' | 'down') => void;
+    onAccept?: (answerId: string) => void;
+    onVerify?: (answerId: string) => void;
+    onDelete?: (answerId: string) => void;
 }
 
 const AnswerList: React.FC<AnswerListProps> = ({
     answers,
     comments,
     currentUserId,
+    currentUserRole,
+    questionAuthorId,
     onVoteAnswer,
     onAddReply,
-    onVoteReply
+    onVoteReply,
+    onAccept,
+    onVerify,
+    onDelete
 }) => {
     const getAnswerReplies = (answerId: string) => {
         return comments.filter(c => c.parentComment === answerId || 
@@ -62,9 +75,14 @@ const AnswerList: React.FC<AnswerListProps> = ({
                             comments={getAnswerReplies(answer._id)}
                             index={index}
                             currentUserId={currentUserId}
+                            currentUserRole={currentUserRole}
+                            questionAuthorId={questionAuthorId}
                             onVote={onVoteAnswer}
                             onAddReply={(content, parentId) => onAddReply(answer._id, content, parentId)}
                             onVoteReply={onVoteReply}
+                            onAccept={onAccept}
+                            onVerify={onVerify}
+                            onDelete={onDelete}
                         />
                     ))}
                 </div>

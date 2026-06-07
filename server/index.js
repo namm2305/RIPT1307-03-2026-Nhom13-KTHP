@@ -8,7 +8,6 @@ connectDB();
 
 const app = express();
 
-// ── Middleware ────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -17,17 +16,17 @@ app.use(cors({
     credentials: true
 }));
 
-// ── Routes ────────────────────────────────────────────────────
-// TV4 - Đuung: Auth routes (đăng nhập, đăng ký, profile, đổi mật khẩu)
 app.use('/api/auth', require('./routes/auth'));
 
-// TV4 - Đuung: User management routes
 app.use('/api/users', require('./routes/users'));
 
-// TV4 - Đuung: Question routes (CRUD câu hỏi, vote, answers)
 app.use('/api/questions', require('./routes/questions'));
 
-// ── Health check ──────────────────────────────────────────────
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/subjects', require('./routes/subjects'));
+app.use('/api/tags', require('./routes/tags'));
+app.use('/api/notifications', require('./routes/notifications'));
+
 app.get('/', (req, res) => {
     res.json({
         message: 'PTIT Q&A Forum API - Nhóm 13',
@@ -40,12 +39,10 @@ app.get('/', (req, res) => {
     });
 });
 
-// ── 404 handler ───────────────────────────────────────────────
 app.use((req, res) => {
     res.status(404).json({ success: false, message: `Route ${req.originalUrl} không tồn tại` });
 });
 
-// ── Global error handler ─────────────────────────────────────
 app.use((err, req, res, _next) => {
     console.error('Unhandled error:', err);
     res.status(err.statusCode || 500).json({
@@ -54,7 +51,6 @@ app.use((err, req, res, _next) => {
     });
 });
 
-// ── Start server ─────────────────────────────────────────────
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT} [${process.env.NODE_ENV}]`);

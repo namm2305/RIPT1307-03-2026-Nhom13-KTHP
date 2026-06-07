@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Tabs, Tag, Space, Typography, Button, Input, message, Spin, Modal } from 'antd';
 import {
   MailOutlined, BookOutlined, ClockCircleOutlined, TrophyOutlined,
@@ -8,14 +8,12 @@ import {
   QuestionCircleOutlined, StarOutlined, LockOutlined, LogoutOutlined,
   IdcardOutlined
 } from '@ant-design/icons';
-import mockUser from '../../mocks/mockUser.json';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const API_BASE = 'http://localhost:5050/api';
 
-// ── Màu & nhãn role ───────────────────────────────────────────
 const ROLE_CONFIG: Record<string, { color: string; bg: string; label: string; icon: React.ReactNode }> = {
   admin:      { color: '#fff',    bg: '#f5222d', label: 'Quản trị viên',    icon: <SafetyCertificateOutlined /> },
   moderator:  { color: '#fff',    bg: '#722ed1', label: 'Kiểm duyệt viên',  icon: <SafetyCertificateOutlined /> },
@@ -24,15 +22,15 @@ const ROLE_CONFIG: Record<string, { color: string; bg: string; label: string; ic
 };
 
 interface Question {
-  id: string; title: string; content: string; tags: string[];
-  views: number; answersCount: number; createdAt: string;
+  _id: string; title: string; tags: string[];
+  viewCount: number; answersCount: number; createdAt: string;
 }
 interface Answer {
-  id: string; questionId: string; questionTitle: string;
+  _id: string; question: { _id: string; title: string };
   content: string; votes: number; isAccepted: boolean; createdAt: string;
 }
 interface UserProfileData {
-  id: string; name: string; email: string; avatar: string; bio: string;
+  _id: string; name: string; email: string; avatar: string; bio: string;
   role: string; roleDisplay?: string; faculty: string; studentId?: string;
   joinDate: string; reputation: number;
   postedQuestions?: Question[]; postedAnswers?: Answer[];
@@ -40,7 +38,9 @@ interface UserProfileData {
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<UserProfileData | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -48,6 +48,7 @@ const UserProfile: React.FC = () => {
   const [editedBio, setEditedBio] = useState('');
   const [editedFaculty, setEditedFaculty] = useState('');
   const [editedStudentId, setEditedStudentId] = useState('');
+  const [editedAvatar, setEditedAvatar] = useState('');
   const [saving, setSaving] = useState(false);
 
   const [changePwdVisible, setChangePwdVisible] = useState(false);
@@ -58,104 +59,81 @@ const UserProfile: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState('questions');
 
-  // ── Tải dữ liệu ──────────────────────────────────────────────
   useEffect(() => {
-    const stored = localStorage.getItem('user');
     const token = localStorage.getItem('token');
+    
+    if (!token) {
+      message.warning('Vui lòng đăng nhập để xem trang cá nhân');
+      navigate('/login');
+      return;
+    }
 
-    const loadFromStorage = (data: UserProfileData) => {
-      const merged: UserProfileData = {
-        ...data,
-        postedQuestions: (mockUser.postedQuestions as Question[]),
-        postedAnswers: (mockUser.postedAnswers as Answer[]),
-      };
-      setUser(merged);
-      setEditedName(data.name);
-      setEditedBio(data.bio || '');
-      setEditedFaculty(data.faculty || '');
-      setEditedStudentId(data.studentId || '');
-    };
-
-    const fetchFromAPI = async (token: string) => {
+    const fetchFromAPI = async () => {
       try {
-        const res = await fetch(`${API_BASE}/auth/me`, {
+        const resAuth = await fetch(`${API_BASE}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        if (!res.ok) throw new Error('Unauthorized');
-        const data = await res.json();
-        const apiUser: UserProfileData = {
-          ...data.user,
-          postedQuestions: (mockUser.postedQuestions as Question[]),
-          postedAnswers: (mockUser.postedAnswers as Answer[]),
-        };
+        if (!resAuth.ok) throw new Error('Unauthorized');
+        const authData = await resAuth.json();
+        const authUserId = authData.user.id;
+        setCurrentUserId(authUserId);
+        
+        const targetUserId = id || authUserId;
+
+        const resUser = await fetch(`${API_BASE}/users/${targetUserId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!resUser.ok) throw new Error('Failed to fetch user details');
+        const userData = await resUser.json();
+        
+        const apiUser: UserProfileData = userData.user;
         setUser(apiUser);
         setEditedName(apiUser.name);
         setEditedBio(apiUser.bio || '');
         setEditedFaculty(apiUser.faculty || '');
         setEditedStudentId(apiUser.studentId || '');
-        localStorage.setItem('user', JSON.stringify(data.user));
-      } catch {
-        if (stored) loadFromStorage(JSON.parse(stored));
-        else navigate('/login');
+        setEditedAvatar(apiUser.avatar || '');
+        
+      } catch (error) {
+        console.error(error);
+        localStorage.removeItem('token');
+        navigate('/login');
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (token) {
-      fetchFromAPI(token).finally(() => setLoading(false));
-    } else if (stored) {
-      loadFromStorage(JSON.parse(stored));
-      setLoading(false);
-    } else {
-      // Demo: dùng mockUser
-      const mockSession: UserProfileData = {
-        id: mockUser.id, name: mockUser.name, email: mockUser.email,
-        avatar: mockUser.avatar, bio: mockUser.bio, role: 'student',
-        roleDisplay: 'Sinh viên', faculty: mockUser.faculty,
-        studentId: 'B21DCCN001', joinDate: mockUser.joinDate,
-        reputation: mockUser.reputation,
-        postedQuestions: (mockUser.postedQuestions as Question[]),
-        postedAnswers: (mockUser.postedAnswers as Answer[]),
-      };
-      localStorage.setItem('user', JSON.stringify(mockSession));
-      setUser(mockSession);
-      setEditedName(mockSession.name);
-      setEditedBio(mockSession.bio);
-      setEditedFaculty(mockSession.faculty);
-      setLoading(false);
-    }
-  }, [navigate]);
+    fetchFromAPI();
+  }, [navigate, id]);
 
-  // ── Lưu hồ sơ ────────────────────────────────────────────────
   const handleSave = async () => {
     if (!editedName.trim()) { message.error('Tên hiển thị không được bỏ trống'); return; }
     if (!user) return;
     setSaving(true);
 
     const token = localStorage.getItem('token');
-    const updated = { ...user, name: editedName.trim(), bio: editedBio, faculty: editedFaculty, studentId: editedStudentId };
+    const updated = { ...user, name: editedName.trim(), bio: editedBio, faculty: editedFaculty, studentId: editedStudentId, avatar: editedAvatar };
 
     try {
       if (token) {
         const res = await fetch(`${API_BASE}/auth/me`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ name: editedName.trim(), bio: editedBio, faculty: editedFaculty, studentId: editedStudentId }),
+          body: JSON.stringify({ name: editedName.trim(), bio: editedBio, faculty: editedFaculty, studentId: editedStudentId, avatar: editedAvatar }),
         });
         const data = await res.json();
         if (res.ok) Object.assign(updated, data.user);
       }
-    } catch { /* offline: lưu local */ }
+    } catch {
+      message.error('Lỗi kết nối khi cập nhật hồ sơ');
+    }
 
     setUser({ ...updated, postedQuestions: user.postedQuestions, postedAnswers: user.postedAnswers });
-    const { postedQuestions: _q, postedAnswers: _a, ...sessionUser } = updated;
-    localStorage.setItem('user', JSON.stringify(sessionUser));
-    window.dispatchEvent(new Event('storage'));
     setIsEditing(false);
     setSaving(false);
     message.success('Đã cập nhật hồ sơ!');
   };
 
-  // ── Đổi mật khẩu ─────────────────────────────────────────────
   const handleChangePwd = async () => {
     if (!curPwd || !newPwd || !confirmPwd) { message.error('Vui lòng điền đầy đủ'); return; }
     if (newPwd.length < 6) { message.error('Mật khẩu mới ít nhất 6 ký tự'); return; }
@@ -184,7 +162,6 @@ const UserProfile: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
     localStorage.removeItem('token');
     window.dispatchEvent(new Event('storage'));
     navigate('/login');
@@ -196,7 +173,6 @@ const UserProfile: React.FC = () => {
     return `${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`;
   };
 
-  // ─────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ textAlign:'center', padding:'80px 0' }}>
       <Spin size="large" /><br/>
@@ -207,8 +183,8 @@ const UserProfile: React.FC = () => {
 
   const role = user.role || 'student';
   const roleCfg = ROLE_CONFIG[role] || ROLE_CONFIG.student;
+  const isOwnProfile = !id || id === currentUserId;
 
-  // ── Stats bar ─────────────────────────────────────────────────
   const stats = [
     { icon: <QuestionCircleOutlined style={{ color:'#1890ff' }} />, value: user.postedQuestions?.length ?? 0, label: 'Câu hỏi' },
     { icon: <MessageOutlined style={{ color:'#52c41a' }} />,       value: user.postedAnswers?.length ?? 0,   label: 'Câu trả lời' },
@@ -216,7 +192,6 @@ const UserProfile: React.FC = () => {
     { icon: <TrophyOutlined style={{ color:'#f5222d' }} />,        value: user.reputation,                  label: 'Điểm uy tín' },
   ];
 
-  // ── Tab items ─────────────────────────────────────────────────
   const tabItems = [
     {
       key: 'questions',
@@ -224,23 +199,20 @@ const UserProfile: React.FC = () => {
       children: (
         <div style={{ display:'flex', flexDirection:'column', gap:14, marginTop:12 }}>
           {user.postedQuestions && user.postedQuestions.length > 0 ? user.postedQuestions.map(q => (
-            <Card key={q.id} hoverable styles={{ body:{ padding:'18px 20px' } }}
+            <Card key={q._id} hoverable styles={{ body:{ padding:'18px 20px' } }}
               style={{ borderRadius:10, border:'1px solid #f0f0f0', transition:'box-shadow 0.2s' }}>
               <Title level={5} style={{ margin:'0 0 6px 0' }}>
-                <a href={`/question/${q.id}`} style={{ color:'#1890ff' }}>{q.title}</a>
+                <a href={`/question/${q._id}`} style={{ color:'#1890ff' }}>{q.title}</a>
               </Title>
-              <Paragraph ellipsis={{ rows:2 }} style={{ color:'#595959', marginBottom:10, fontSize:13.5 }}>
-                {q.content}
-              </Paragraph>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:8 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:8, marginTop: 10 }}>
                 <Space size={[0, 4]} wrap>
                   {q.tags.map(tag => <Tag color="purple" key={tag}>{tag}</Tag>)}
                 </Space>
                 <Space size="large" style={{ color:'#8c8c8c', fontSize:12.5 }}>
                   <Space size="small"><ClockCircleOutlined /><span>{formatDate(q.createdAt)}</span></Space>
-                  <Space size="small"><EyeOutlined /><span>{q.views} lượt xem</span></Space>
+                  <Space size="small"><EyeOutlined /><span>{q.viewCount} lượt xem</span></Space>
                   <Space size="small" style={{ color: q.answersCount > 0 ? '#52c41a' : '#8c8c8c' }}>
-                    <MessageOutlined /><span>{q.answersCount} trả lời</span>
+                    <MessageOutlined /><span>{q.answersCount || 0} trả lời</span>
                   </Space>
                 </Space>
               </div>
@@ -260,12 +232,12 @@ const UserProfile: React.FC = () => {
       children: (
         <div style={{ display:'flex', flexDirection:'column', gap:14, marginTop:12 }}>
           {user.postedAnswers && user.postedAnswers.length > 0 ? user.postedAnswers.map(ans => (
-            <Card key={ans.id} hoverable styles={{ body:{ padding:'18px 20px' } }}
+            <Card key={ans._id} hoverable styles={{ body:{ padding:'18px 20px' } }}
               style={{ borderRadius:10, border:'1px solid #f0f0f0' }}>
               <div style={{ borderLeft:'3px solid #1890ff', paddingLeft:12, marginBottom:10 }}>
                 <Text type="secondary" style={{ fontSize:12 }}>Trả lời cho:</Text>
                 <div style={{ fontWeight:600, fontSize:14, marginTop:2 }}>
-                  <a href={`/question/${ans.questionId}`} style={{ color:'#262626' }}>{ans.questionTitle}</a>
+                  <a href={`/question/${ans.question?._id}`} style={{ color:'#262626' }}>{ans.question?.title || 'Câu hỏi không tồn tại'}</a>
                 </div>
               </div>
               <Paragraph style={{ color:'#595959', margin:'0 0 10px 0', background:'#fafafa', padding:'9px 13px', borderRadius:6, fontSize:13.5 }}>
@@ -290,21 +262,17 @@ const UserProfile: React.FC = () => {
     }
   ];
 
-  // ─────────────────────────────────────────────────────────────
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:20, maxWidth:1000, margin:'0 auto' }}>
 
-      {/* ── Profile Card ─────────────────────────────────────── */}
       <Card styles={{ body:{ padding:0 } }}
         style={{ borderRadius:16, border:'none', boxShadow:'0 4px 24px rgba(0,0,0,0.07)', overflow:'hidden' }}>
 
-        {/* Rainbow top strip */}
         <div style={{ height:7, background:'linear-gradient(to right,#1890ff,#722ed1,#f5222d,#fadb14)' }} />
 
         <div style={{ padding:'28px 32px' }}>
           <div style={{ display:'flex', gap:28, alignItems:'flex-start', flexWrap:'wrap' }}>
 
-            {/* Avatar */}
             <div style={{ position:'relative', flexShrink:0 }}>
               <img src={user.avatar} alt={user.name}
                 style={{ width:110, height:110, borderRadius:'50%', border:'4px solid #fff',
@@ -314,7 +282,6 @@ const UserProfile: React.FC = () => {
                 background:'#52c41a', border:'3px solid #fff' }} />
             </div>
 
-            {/* Info */}
             <div style={{ flex:1, minWidth:260 }}>
               {isEditing ? (
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -337,9 +304,29 @@ const UserProfile: React.FC = () => {
                       <Input value={editedStudentId} onChange={e => setEditedStudentId(e.target.value)} style={{ borderRadius:7 }} />
                     </div>
                   </div>
+                  <div>
+                    <label style={styles.editLabel}>Đổi ảnh đại diện (Tối đa 2MB)</label>
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                          message.error('Ảnh không được vượt quá 2MB');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => setEditedAvatar(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }} style={{ marginBottom: 8 }} />
+                    {editedAvatar && (
+                      <div style={{ marginTop: 8 }}>
+                        <img src={editedAvatar} alt="preview" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid #1890ff' }} />
+                      </div>
+                    )}
+                  </div>
                   <Space>
                     <Button type="primary" icon={<CheckOutlined />} onClick={handleSave} loading={saving} style={{ borderRadius:7 }}>Lưu</Button>
-                    <Button icon={<CloseOutlined />} onClick={() => { setIsEditing(false); setEditedName(user.name); setEditedBio(user.bio || ''); }}
+                    <Button icon={<CloseOutlined />} onClick={() => { setIsEditing(false); setEditedName(user.name); setEditedBio(user.bio || ''); setEditedAvatar(user.avatar || ''); }}
                       style={{ borderRadius:7 }}>Hủy</Button>
                   </Space>
                 </div>
@@ -360,13 +347,12 @@ const UserProfile: React.FC = () => {
                       </Text>
                     </div>
                     <Space>
-                      <Button type="dashed" icon={<EditOutlined />} onClick={() => setIsEditing(true)} style={{ borderRadius:7 }}>Chỉnh sửa</Button>
-                      <Button icon={<LockOutlined />} onClick={() => setChangePwdVisible(true)} style={{ borderRadius:7 }}>Đổi mật khẩu</Button>
-                      <Button icon={<LogoutOutlined />} danger onClick={handleLogout} style={{ borderRadius:7 }}>Đăng xuất</Button>
+                      {isOwnProfile && <Button type="dashed" icon={<EditOutlined />} onClick={() => setIsEditing(true)} style={{ borderRadius:7 }}>Chỉnh sửa</Button>}
+                      {isOwnProfile && <Button icon={<LockOutlined />} onClick={() => setChangePwdVisible(true)} style={{ borderRadius:7 }}>Đổi mật khẩu</Button>}
+                      {isOwnProfile && <Button icon={<LogoutOutlined />} danger onClick={handleLogout} style={{ borderRadius:7 }}>Đăng xuất</Button>}
                     </Space>
                   </div>
 
-                  {/* Bio */}
                   <div style={{ margin:'14px 0', padding:'10px 14px', background:'rgba(24,144,255,0.03)',
                     borderRadius:8, borderLeft:'3px solid #1890ff' }}>
                     <Paragraph style={{ margin:0, fontStyle: user.bio ? 'normal' : 'italic',
@@ -375,7 +361,6 @@ const UserProfile: React.FC = () => {
                     </Paragraph>
                   </div>
 
-                  {/* Info row */}
                   <div style={{ display:'flex', gap:20, flexWrap:'wrap' }}>
                     <Space style={{ color:'#595959', fontSize:13 }}><BookOutlined style={{ color:'#722ed1' }} /><span>{user.faculty}</span></Space>
                     {user.studentId && <Space style={{ color:'#595959', fontSize:13 }}><IdcardOutlined style={{ color:'#1890ff' }} /><span>{user.studentId}</span></Space>}
@@ -387,7 +372,6 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Stats bar ──────────────────────────────────────── */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', borderTop:'1px solid #f0f0f0' }}>
           {stats.map((s, i) => (
             <div key={i} style={{ padding:'16px 0', textAlign:'center', borderRight: i < 3 ? '1px solid #f0f0f0' : 'none' }}>
@@ -399,12 +383,10 @@ const UserProfile: React.FC = () => {
         </div>
       </Card>
 
-      {/* ── Activity Tabs Card ────────────────────────────────── */}
       <Card style={{ borderRadius:16, boxShadow:'0 4px 20px rgba(0,0,0,0.04)', border:'none' }}>
         <Tabs activeKey={activeTab} onChange={setActiveTab} size="large" items={tabItems} style={{ marginTop:-8 }} />
       </Card>
 
-      {/* ── Đổi mật khẩu Modal ───────────────────────────────── */}
       <Modal
         title={<span><LockOutlined style={{ marginRight:8, color:'#1890ff' }} />Đổi mật khẩu</span>}
         open={changePwdVisible}

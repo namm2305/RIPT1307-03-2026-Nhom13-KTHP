@@ -22,10 +22,11 @@ const ROLES = [
   { value: 'lecturer', label: '📚 Giảng viên', desc: 'Xác nhận câu trả lời, ghim câu hỏi' },
 ];
 
-const API_BASE = 'http://localhost:5050/api';
+import { useAuth } from '../../context/AuthContext';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [studentId, setStudentId] = useState('');
@@ -48,8 +49,8 @@ const Register: React.FC = () => {
   const [registerSuccess, setRegisterSuccess] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem('user');
-    if (user) navigate('/profile');
+    const token = localStorage.getItem('token');
+    if (token) navigate('/profile');
   }, [navigate]);
 
   useEffect(() => {
@@ -110,44 +111,18 @@ const Register: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role, faculty, studentId }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setServerError(data.message || 'Đăng ký thất bại');
-        return;
-      }
-
-      // Lưu token & user vào localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      window.dispatchEvent(new Event('storage'));
-
-      setRegisterSuccess(true);
-      setTimeout(() => navigate('/profile'), 1200);
-    } catch {
-      // Fallback nếu server chưa chạy: dùng mock
-      const mockSession = {
-        id: 'u-registered',
+      await register({
         name,
         email,
-        role,
-        roleDisplay: role === 'lecturer' ? 'Giảng viên' : 'Sinh viên',
-        faculty,
-        studentId,
-        bio: 'Thành viên mới gia nhập diễn đàn Q&A của PTIT.',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
-        joinDate: new Date().toISOString(),
-        reputation: 10,
-      };
-      localStorage.setItem('user', JSON.stringify(mockSession));
-      window.dispatchEvent(new Event('storage'));
+        password,
+        role: role as 'student' | 'lecturer',
+        faculty: faculty,
+        studentId: studentId
+      });
       setRegisterSuccess(true);
       setTimeout(() => navigate('/profile'), 1200);
+    } catch (err: any) {
+      setServerError(err.message || 'Đăng ký thất bại');
     } finally {
       setIsLoading(false);
     }
@@ -182,7 +157,6 @@ const Register: React.FC = () => {
       </div>
 
       <div className="fade-in" style={styles.card}>
-        {/* Header */}
         <div style={styles.header}>
           <div style={styles.logo}><span style={styles.logoText}>PTIT</span></div>
           <h2 style={styles.title}>Đăng Ký Tài Khoản</h2>
@@ -198,7 +172,6 @@ const Register: React.FC = () => {
         ) : (
           <form onSubmit={handleSubmit} noValidate>
 
-            {/* Lựa chọn Role */}
             <div style={styles.group}>
               <label style={styles.label}>Bạn là</label>
               <div style={{ display:'flex', gap:'10px' }}>
@@ -216,7 +189,6 @@ const Register: React.FC = () => {
               </div>
             </div>
 
-            {/* Họ tên */}
             <div style={styles.group}>
               <label style={styles.label}>Họ và tên</label>
               <div className={`input-wrap${nameError ? ' input-err' : ''}`} style={styles.inputWrap}>
@@ -230,7 +202,6 @@ const Register: React.FC = () => {
               {nameError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }} /><span>{nameError}</span></div>}
             </div>
 
-            {/* Email */}
             <div style={styles.group}>
               <label style={styles.label}>Địa chỉ Email</label>
               <div className={`input-wrap${emailError ? ' input-err' : ''}`} style={styles.inputWrap}>
@@ -244,7 +215,6 @@ const Register: React.FC = () => {
               {emailError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }} /><span>{emailError}</span></div>}
             </div>
 
-            {/* Mã sinh viên / Mã GV */}
             <div style={styles.group}>
               <label style={styles.label}>{role === 'lecturer' ? 'Mã giảng viên' : 'Mã sinh viên'} <span style={styles.optional}>(tuỳ chọn)</span></label>
               <div className="input-wrap" style={styles.inputWrap}>
@@ -257,7 +227,6 @@ const Register: React.FC = () => {
               </div>
             </div>
 
-            {/* Khoa */}
             <div style={styles.group}>
               <label style={styles.label}>Khoa / Đơn vị</label>
               <div className="input-wrap" style={styles.inputWrap}>
@@ -272,7 +241,6 @@ const Register: React.FC = () => {
               </div>
             </div>
 
-            {/* Mật khẩu */}
             <div style={styles.group}>
               <label style={styles.label}>Mật khẩu</label>
               <div className={`input-wrap${passwordError ? ' input-err' : ''}`} style={styles.inputWrap}>
@@ -312,7 +280,6 @@ const Register: React.FC = () => {
               {passwordError && !password && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }} /><span>{passwordError}</span></div>}
             </div>
 
-            {/* Xác nhận mật khẩu */}
             <div style={styles.group}>
               <label style={styles.label}>Xác nhận mật khẩu</label>
               <div className={`input-wrap${confirmPasswordError ? ' input-err' : ''}`} style={styles.inputWrap}>
@@ -330,14 +297,12 @@ const Register: React.FC = () => {
               {confirmPasswordError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }} /><span>{confirmPasswordError}</span></div>}
             </div>
 
-            {/* Server error */}
             {serverError && (
               <div style={{ ...styles.err, padding:'10px 14px', background:'rgba(255,77,79,0.1)', borderRadius:'8px', marginTop:'-4px' }}>
                 <ExclamationCircleOutlined style={{ fontSize: 14 }} /><span>{serverError}</span>
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit" disabled={isLoading}
               className="submit-btn"

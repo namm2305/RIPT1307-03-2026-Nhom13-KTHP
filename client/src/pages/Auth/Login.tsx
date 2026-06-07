@@ -4,8 +4,11 @@ import { MailOutlined, LockOutlined, ArrowRightOutlined, ExclamationCircleOutlin
 
 const API_BASE = 'http://localhost:5050/api';
 
+import { useAuth } from '../../context/AuthContext';
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -18,7 +21,7 @@ const Login: React.FC = () => {
   const [loginSuccess, setLoginSuccess] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem('user');
+    const user = localStorage.getItem('token');
     if (user) navigate('/profile');
   }, [navigate]);
 
@@ -42,43 +45,11 @@ const Login: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setServerError(data.message || 'Đăng nhập thất bại');
-        return;
-      }
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      window.dispatchEvent(new Event('storage'));
-
+      await login(email, password);
       setLoginSuccess(true);
       setTimeout(() => navigate('/profile'), 1000);
-    } catch {
-      // Fallback mock khi server chưa chạy
-      const mockUser = {
-        id: 'u1',
-        name: 'Nguyễn Văn Dun',
-        email,
-        role: 'student',
-        roleDisplay: 'Sinh viên',
-        faculty: 'Khoa Công nghệ Thông tin 1',
-        studentId: 'B21DCCN001',
-        bio: 'Sinh viên CNTT K21 PTIT. Đam mê UI/UX và React/TypeScript.',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=Dun`,
-        joinDate: '2024-09-01T08:00:00.000Z',
-        reputation: 250,
-      };
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      window.dispatchEvent(new Event('storage'));
-      setLoginSuccess(true);
-      setTimeout(() => navigate('/profile'), 1000);
+    } catch (err: any) {
+      setServerError(err.message || 'Đăng nhập thất bại');
     } finally {
       setIsLoading(false);
     }
@@ -122,14 +93,12 @@ const Login: React.FC = () => {
         ) : (
           <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:'18px' }} noValidate>
 
-            {/* Server error banner */}
             {serverError && (
               <div className="shake" style={{ display:'flex', alignItems:'center', gap:'8px', padding:'10px 14px', background:'rgba(255,77,79,0.12)', border:'1px solid rgba(255,77,79,0.3)', borderRadius:'9px', color:'#ff7875', fontSize:'13.5px' }}>
                 <ExclamationCircleOutlined style={{ fontSize: 15 }} /><span>{serverError}</span>
               </div>
             )}
 
-            {/* Email */}
             <div style={styles.group}>
               <label style={styles.label}>Địa chỉ Email</label>
               <div className={`input-wrap${emailError ? ' input-err' : ''}`} style={styles.inputWrap}>
@@ -145,7 +114,6 @@ const Login: React.FC = () => {
               {emailError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }}/><span>{emailError}</span></div>}
             </div>
 
-            {/* Password */}
             <div style={styles.group}>
               <label style={styles.label}>Mật khẩu</label>
               <div className={`input-wrap${passwordError ? ' input-err' : ''}`} style={styles.inputWrap}>
@@ -164,7 +132,6 @@ const Login: React.FC = () => {
               {passwordError && <div className="shake" style={styles.err}><ExclamationCircleOutlined style={{ fontSize: 13 }}/><span>{passwordError}</span></div>}
             </div>
 
-            {/* Remember + Forgot */}
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:'13px', marginTop:'-4px' }}>
               <label style={{ display:'flex', alignItems:'center', gap:'6px', color:'#94a3b8', cursor:'pointer' }}>
                 <input type="checkbox" style={{ cursor:'pointer', accentColor:'#1890ff' }} />
@@ -175,7 +142,6 @@ const Login: React.FC = () => {
               </a>
             </div>
 
-            {/* Submit */}
             <button
               type="submit" disabled={isLoading}
               className={`submit-btn${!isLoading ? ' glow' : ''}`}

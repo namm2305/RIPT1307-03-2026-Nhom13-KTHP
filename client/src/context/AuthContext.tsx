@@ -5,7 +5,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'lecturer' | 'moderator' | 'admin';
   faculty?: string;
   bio?: string;
   avatar?: string;
@@ -19,7 +19,7 @@ interface AuthContextType {
     name: string;
     email: string;
     password: string;
-    role: 'student' | 'teacher' | 'admin';
+    role: 'student' | 'lecturer' | 'moderator' | 'admin';
     faculty?: string;
   }) => Promise<void>;
   logout: () => void;
@@ -31,7 +31,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Set auth token header globally in axios
   const setAuthHeader = (token: string | null) => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -40,7 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Load user profile on startup if token exists
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem('token');
@@ -49,9 +47,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const res = await axios.get('/api/auth/me');
           if (res.data && res.data.success) {
-            setUser(res.data.data);
+            setUser(res.data.user);
           } else {
-            // If token invalid/expired
             localStorage.removeItem('token');
             setAuthHeader(null);
           }
@@ -88,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string;
     email: string;
     password: string;
-    role: 'student' | 'teacher' | 'admin';
+    role: 'student' | 'lecturer' | 'moderator' | 'admin';
     faculty?: string;
   }) => {
     try {

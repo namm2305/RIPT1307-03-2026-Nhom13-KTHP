@@ -4,14 +4,12 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 
-// Helper: tạo JWT token
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: '7d'
     });
 };
 
-// Helper: format user response (không trả password)
 const formatUserResponse = (user) => ({
     id: user._id,
     name: user.name,
@@ -28,31 +26,22 @@ const formatUserResponse = (user) => ({
     lastLogin: user.lastLogin
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Đăng ký tài khoản mới
-// @route   POST /api/auth/register
-// @access  Public
-// ─────────────────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, role, faculty, studentId } = req.body;
 
-        // Validate bắt buộc
         if (!name || !email || !password) {
             return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ họ tên, email và mật khẩu' });
         }
 
-        // Không cho phép đăng ký role admin qua API công khai
         const allowedRoles = ['student', 'lecturer'];
         const assignedRole = allowedRoles.includes(role) ? role : 'student';
 
-        // Kiểm tra email đã tồn tại chưa
         const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             return res.status(400).json({ success: false, message: 'Email này đã được đăng ký, vui lòng dùng email khác' });
         }
 
-        // Tạo user mới
         const user = await User.create({
             name,
             email,
@@ -71,7 +60,6 @@ router.post('/register', async (req, res) => {
             user: formatUserResponse(user)
         });
     } catch (error) {
-        // Lỗi validation của mongoose
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(e => e.message);
             return res.status(400).json({ success: false, message: messages[0] });
@@ -81,11 +69,6 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Đăng nhập
-// @route   POST /api/auth/login
-// @access  Public
-// ─────────────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -94,7 +77,6 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Vui lòng nhập email và mật khẩu' });
         }
 
-        // Lấy user kèm password (field select:false)
         const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
         if (!user) {
@@ -110,7 +92,6 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
         }
 
-        // Cập nhật lastLogin
         user.lastLogin = new Date();
         await user.save({ validateBeforeSave: false });
 
@@ -128,14 +109,15 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Lấy thông tin user hiện tại (từ token)
-// @route   GET /api/auth/me
-// @access  Private
-// ─────────────────────────────────────────────────────────────
 router.get('/me', protect, async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
+        
+        if (user && user.avatar && (user.avatar.includes('T%E1%BA%ADp_tin:Logo_PTIT') || user.avatar.includes('portal.ptit.edu.vn') || user.avatar.includes('Tập_tin:Logo_PTIT') || user.avatar.includes('wikimedia.org'))) {
+            user.avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJUAAACUCAMAAACtIJvYAAAA2FBMVEX
+            await user.save({ validateBeforeSave: false });
+        }
+
         return res.status(200).json({
             success: true,
             user: formatUserResponse(user)
@@ -145,20 +127,16 @@ router.get('/me', protect, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Cập nhật hồ sơ (name, bio)
-// @route   PUT /api/auth/me
-// @access  Private
-// ─────────────────────────────────────────────────────────────
 router.put('/me', protect, async (req, res) => {
     try {
-        const { name, bio, faculty, studentId } = req.body;
+        const { name, bio, faculty, studentId, avatar } = req.body;
 
         const updates = {};
         if (name && name.trim()) updates.name = name.trim();
         if (bio !== undefined) updates.bio = bio.trim();
         if (faculty) updates.faculty = faculty;
         if (studentId !== undefined) updates.studentId = studentId.trim();
+        if (avatar !== undefined) updates.avatar = avatar;
 
         const user = await User.findByIdAndUpdate(
             req.user._id,
@@ -180,11 +158,6 @@ router.put('/me', protect, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// @desc    Đổi mật khẩu
-// @route   PUT /api/auth/change-password
-// @access  Private
-// ─────────────────────────────────────────────────────────────
 router.put('/change-password', protect, async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;

@@ -32,7 +32,6 @@ const commentSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    // Đánh dấu câu trả lời được giảng viên xác nhận
     isVerifiedByLecturer: {
         type: Boolean,
         default: false
@@ -52,7 +51,6 @@ const commentSchema = new mongoose.Schema({
     }
 });
 
-// Virtual: danh sách replies
 commentSchema.virtual('replies', {
     ref: 'Comment',
     localField: '_id',
@@ -60,9 +58,8 @@ commentSchema.virtual('replies', {
     justOne: false
 });
 
-commentSchema.pre('save', function (next) {
-    this.updatedAt = new Date();
-    next();
+commentSchema.pre('save', function () {
+    this.updatedAt = Date.now();
 });
 
 commentSchema.index({ question: 1, createdAt: 1 });

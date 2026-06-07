@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Vui lòng nhập mật khẩu'],
         minlength: [6, 'Mật khẩu ít nhất 6 ký tự'],
-        select: false // Không trả về password mặc định
+        select: false 
     },
     role: {
         type: String,
@@ -88,7 +88,6 @@ const userSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// Virtual: link câu hỏi đã đăng
 userSchema.virtual('postedQuestions', {
     ref: 'Question',
     localField: '_id',
@@ -96,7 +95,6 @@ userSchema.virtual('postedQuestions', {
     justOne: false
 });
 
-// Virtual: link câu trả lời đã đăng
 userSchema.virtual('postedAnswers', {
     ref: 'Comment',
     localField: '_id',
@@ -104,27 +102,36 @@ userSchema.virtual('postedAnswers', {
     justOne: false
 });
 
-// Hash password trước khi lưu (Mongoose 7+: async hook không dùng next)
+userSchema.virtual('postedQuestionsCount', {
+    ref: 'Question',
+    localField: '_id',
+    foreignField: 'author',
+    count: true
+});
+
+userSchema.virtual('postedAnswersCount', {
+    ref: 'Comment',
+    localField: '_id',
+    foreignField: 'author',
+    count: true
+});
+
 userSchema.pre('save', async function () {
     if (!this.isModified('password')) return;
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Tự động tạo avatar từ DiceBear nếu chưa có
-userSchema.pre('save', function (next) {
-    if (!this.avatar) {
-        this.avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(this.name)}`;
+userSchema.pre('save', function () {
+    if (!this.avatar || this.avatar.includes('T%E1%BA%ADp_tin:Logo_PTIT') || this.avatar.includes('portal.ptit.edu.vn') || this.avatar.includes('wikimedia.org') || this.avatar.startsWith('data:image/png;base64')) {
+        this.avatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(this.name || 'U')}&backgroundColor=1890ff&textColor=ffffff`;
     }
-    next();
 });
 
-// Method: so sánh password
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Method: lấy display role tiếng Việt
 userSchema.methods.getRoleDisplay = function () {
     const roleMap = {
         student: 'Sinh viên',
@@ -135,7 +142,6 @@ userSchema.methods.getRoleDisplay = function () {
     return roleMap[this.role] || 'Sinh viên';
 };
 
-// Index để tìm kiếm nhanh (email đã có unique:true trong schema, không cần index lại)
 userSchema.index({ role: 1 });
 userSchema.index({ faculty: 1 });
 
