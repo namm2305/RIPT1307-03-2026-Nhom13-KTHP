@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const commentSchema = new mongoose.Schema({
     content: {
         type: String,
-        required: [true, 'Please add content']
+        required: [true, 'Vui lòng nhập nội dung câu trả lời']
     },
     question: {
         type: mongoose.Schema.ObjectId,
@@ -28,10 +28,44 @@ const commentSchema = new mongoose.Schema({
         user: { type: mongoose.Schema.ObjectId, ref: 'User' },
         type: { type: String, enum: ['up', 'down'] }
     }],
+    isAccepted: {
+        type: Boolean,
+        default: false
+    },
+    // Đánh dấu câu trả lời được giảng viên xác nhận
+    isVerifiedByLecturer: {
+        type: Boolean,
+        default: false
+    },
+    verifiedBy: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+        default: null
+    },
     createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
         type: Date,
         default: Date.now
     }
 });
+
+// Virtual: danh sách replies
+commentSchema.virtual('replies', {
+    ref: 'Comment',
+    localField: '_id',
+    foreignField: 'parentComment',
+    justOne: false
+});
+
+commentSchema.pre('save', function (next) {
+    this.updatedAt = new Date();
+    next();
+});
+
+commentSchema.index({ question: 1, createdAt: 1 });
+commentSchema.index({ author: 1 });
 
 module.exports = mongoose.model('Comment', commentSchema);

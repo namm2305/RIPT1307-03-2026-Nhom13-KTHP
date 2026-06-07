@@ -3,15 +3,22 @@ const mongoose = require('mongoose');
 const questionSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: [true, 'Please add a title'],
+        required: [true, 'Vui lòng nhập tiêu đề câu hỏi'],
         trim: true,
-        maxlength: [200, 'Title cannot be more than 200 characters']
+        maxlength: [200, 'Tiêu đề không được quá 200 ký tự']
     },
     content: {
         type: String,
-        required: [true, 'Please add content']
+        required: [true, 'Vui lòng nhập nội dung câu hỏi']
     },
-    tags: [String],
+    tags: {
+        type: [String],
+        validate: {
+            validator: (arr) => arr.length <= 5,
+            message: 'Tối đa 5 thẻ tag'
+        },
+        default: []
+    },
     author: {
         type: mongoose.Schema.ObjectId,
         ref: 'User',
@@ -29,7 +36,29 @@ const questionSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    acceptedAnswer: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'Comment',
+        default: null
+    },
+    isClosed: {
+        type: Boolean,
+        default: false
+    },
+    closedReason: {
+        type: String,
+        default: ''
+    },
+    // Dành cho giảng viên / admin đánh dấu câu hỏi hay
+    isPinned: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
         type: Date,
         default: Date.now
     }
@@ -38,12 +67,34 @@ const questionSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-
-questionSchema.virtual('comments', {
+// Virtual: đếm số câu trả lời
+questionSchema.virtual('answersCount', {
     ref: 'Comment',
     localField: '_id',
     foreignField: 'question',
-    justOne: false
+    count: true
 });
+
+// Virtual: danh sách câu trả lời
+questionSchema.virtual('answers', {
+    ref: 'Comment',
+    localField: '_id',
+    foreignField: 'question',
+    justOne: false,
+    match: { parentComment: null } // Chỉ lấy câu trả lời gốc, không phải reply
+});
+
+// Cập nhật updatedAt trước khi save
+questionSchema.pre('save', function (next) {
+    this.updatedAt = new Date();
+    next();
+});
+
+// Index tìm kiếm
+questionSchema.index({ title: 'text', content: 'text' });
+questionSchema.index({ tags: 1 });
+questionSchema.index({ author: 1 });
+questionSchema.index({ createdAt: -1 });
+questionSchema.index({ votes: -1 });
 
 module.exports = mongoose.model('Question', questionSchema);

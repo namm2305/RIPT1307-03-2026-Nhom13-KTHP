@@ -1,7 +1,7 @@
 import React from 'react';
-import { Layout, Menu, Button, Typography } from 'antd';
+import { Layout, Menu, Button, Space, Typography } from 'antd';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { MessageOutlined, LoginOutlined } from '@ant-design/icons';
+import { MessageOutlined, UserOutlined, LoginOutlined } from '@ant-design/icons';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -23,9 +23,9 @@ const MainLayout: React.FC = () => {
         backgroundColor: '#001529',
         padding: '0 24px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-          <MessageOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-          <Title level={4} style={{ color: '#fff', margin: 0, fontSize: '18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }} onClick={() => navigate('/')}>
+          <MessageOutlined style={{ fontSize: '24px', color: '#1890ff', cursor: 'pointer' }} />
+          <Title level={4} style={{ color: '#fff', margin: 0, cursor: 'pointer', fontSize: '18px' }}>
             PTIT Q&A Forum
           </Title>
         </div>
@@ -41,16 +41,17 @@ const MainLayout: React.FC = () => {
           style={{ flex: 1, minWidth: 0, marginLeft: '32px' }}
         />
 
-        {/* Nút Đăng nhập - placeholder, chưa có chức năng. Sẽ hoạt động khi ghép nhánh login */}
-        <Button type="primary" icon={<LoginOutlined />} onClick={() => navigate('/login')}>
-          Đăng nhập
-        </Button>
+        <Space>
+          <Button type="primary" icon={<LoginOutlined />} onClick={() => navigate('/login')}>
+            Đăng nhập
+          </Button>
+        </Space>
       </Header>
 
       {/* Main Content Area */}
       <Content style={{ padding: '24px 50px', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
         <div style={{ minHeight: '70vh' }}>
-          <Outlet />
+          <Outlet /> {/* Nơi các trang con như Home, Login, Detail sẽ hiển thị */}
         </div>
       </Content>
 
@@ -62,4 +63,4 @@ const MainLayout: React.FC = () => {
   );
 };
 
-export default MainLayout;
+export default MainLayout;
