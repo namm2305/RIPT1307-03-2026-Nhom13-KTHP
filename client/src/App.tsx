@@ -3,13 +3,11 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/mainLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import AskQuestion from './pages/AskQuestion';
+import Tags from './pages/Tags';
+import TagDetail from './pages/TagDetail';
+import NotFound from './pages/NotFound';
 import { AuthProvider } from './context/AuthContext';
-
-const TagsPlaceholder: React.FC = () => (
-  <div style={{ padding: 24, background: '#fff', borderRadius: 8 }}>
-    Trang Danh sách Thẻ môn học
-  </div>
-);
 
 const App: React.FC = () => {
   return (
@@ -19,8 +17,11 @@ const App: React.FC = () => {
           {/* Route cha dùng chung Layout */}
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
-            <Route path="tags" element={<TagsPlaceholder />} />
+            <Route path="tags" element={<Tags />} />
+            <Route path="tags/:id" element={<TagDetail />} />
+            <Route path="ask" element={<AskQuestion />} />
             <Route path="login" element={<Login />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>
