@@ -28,14 +28,14 @@ const AdminDashboard: React.FC = () => {
       navigate('/login');
       return;
     }
-    if (!['admin', 'lecturer'].includes(user.role)) {
+    if (user.role !== 'admin') {
       message.error('Bạn không có quyền truy cập trang này');
       navigate('/');
       return;
     }
   }, [user, navigate]);
 
-  if (!user || !['admin', 'lecturer'].includes(user.role)) {
+  if (!user || user.role !== 'admin') {
     return null;
   }
 

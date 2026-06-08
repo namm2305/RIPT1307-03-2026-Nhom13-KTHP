@@ -263,12 +263,12 @@ const Home: React.FC = () => {
             >
               <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                 <img 
-                  src={typeof item.author === 'object' ? item.author.avatar : undefined} 
-                  alt={typeof item.author === 'object' ? item.author.name : item.author as string} 
+                  src={item.author && typeof item.author === 'object' ? item.author.avatar : undefined} 
+                  alt={item.author && typeof item.author === 'object' ? item.author.name : 'Unknown'} 
                   style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#e6f7ff', objectFit: 'cover' }} 
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${typeof item.author === 'object' ? item.author.name : item.author}`;
+                    target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.author && typeof item.author === 'object' ? item.author.name : 'Unknown'}`;
                   }}
                 />
                 

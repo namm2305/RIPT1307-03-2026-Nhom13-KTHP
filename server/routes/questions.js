@@ -33,6 +33,12 @@ const sendNotificationToFollowers = async (question, senderId, type, message, li
     }
 };
 
+router.get('/test-logs', async (req, res) => {
+    const ActivityLog = require('../models/ActivityLog');
+    const logs = await ActivityLog.find().populate('affectedUser', 'name').sort({ createdAt: -1 }).limit(2);
+    res.json(logs);
+});
+
 router.get('/', async (req, res) => {
     try {
         const { tag, search, sort = 'latest', page = 1, limit = 10, author } = req.query;
@@ -274,22 +280,44 @@ router.delete('/:id', protect, async (req, res) => {
         }
 
         const { reason } = req.body;
+        const questionTitle = question.title;
 
-        if (question.author.toString() !== req.user._id.toString()) {
-            await Notification.create({
-                user: question.author,
-                sender: req.user._id,
-                type: 'SYSTEM_ALERT',
-                message: `Câu hỏi "${question.title}" của bạn đã bị xóa. Lý do: ${reason || 'Không có lý do được cung cấp.'}`,
-                link: `/`
-            });
+        try {
+            if (question.author && question.author.toString() !== req.user._id.toString()) {
+                await Notification.create({
+                    user: question.author,
+                    sender: req.user._id,
+                    type: 'SYSTEM_ALERT',
+                    message: `Câu hỏi "${question.title}" của bạn đã bị xóa. Lý do: ${reason || 'Không có lý do được cung cấp.'}`,
+                    link: `/`
+                });
+            }
+        } catch (notifErr) {
+            console.error('Lỗi khi tạo thông báo xóa câu hỏi:', notifErr);
         }
 
         await Comment.deleteMany({ question: req.params.id });
         await Question.findByIdAndDelete(req.params.id);
 
+        try {
+            // Ghi nhật ký hoạt động
+            const ActivityLog = require('../models/ActivityLog');
+            await ActivityLog.create({
+                action: `Xóa câu hỏi: "${questionTitle}"`,
+                user: req.user._id,
+                affectedUser: question.author,
+                targetId: req.params.id,
+                targetModel: 'Question',
+                deletedContent: question.content,
+                details: `IP: ${req.ip}${reason ? ' | Lý do: ' + reason : ''}`
+            });
+        } catch (logError) {
+            console.error('Lỗi khi ghi ActivityLog xóa câu hỏi:', logError);
+        }
+
         return res.status(200).json({ success: true, message: 'Đã xoá câu hỏi' });
     } catch (error) {
+        console.error('Lỗi khi xoá câu hỏi:', error);
         return res.status(500).json({ success: false, message: 'Lỗi server' });
     }
 });
@@ -456,6 +484,10 @@ router.delete('/:id/answers/:answerId', protect, async (req, res) => {
             return res.status(403).json({ success: false, message: 'Không có quyền xóa câu trả lời này' });
         }
 
+        const { reason } = req.body;
+        const answerContent = answer.content;
+        const answerAuthor = answer.author;
+
         await Comment.deleteMany({ parentComment: answer._id });
         
         await Comment.findByIdAndDelete(answer._id);
@@ -466,8 +498,40 @@ router.delete('/:id/answers/:answerId', protect, async (req, res) => {
             await question.save();
         }
 
+        try {
+            // Gửi thông báo cho tác giả comment
+            if (answerAuthor.toString() !== req.user._id.toString()) {
+                await Notification.create({
+                    user: answerAuthor,
+                    sender: req.user._id,
+                    type: 'SYSTEM_ALERT',
+                    message: `Bình luận của bạn trong câu hỏi "${question ? question.title : ''}" đã bị xóa. Lý do: ${reason || 'Không có lý do được cung cấp.'}`,
+                    link: question ? `/question/${question._id}` : '/'
+                });
+            }
+        } catch (notifError) {
+            console.error('Lỗi khi gửi thông báo xóa comment:', notifError);
+        }
+
+        try {
+            // Ghi nhật ký hoạt động
+            const ActivityLog = require('../models/ActivityLog');
+            await ActivityLog.create({
+                action: `Xóa bình luận trong câu hỏi: "${question ? question.title : 'Đã xóa'}"`,
+                user: req.user._id,
+                affectedUser: answerAuthor,
+                targetId: req.params.answerId,
+                targetModel: 'Comment',
+                deletedContent: answerContent,
+                details: `IP: ${req.ip}${reason ? ' | Lý do: ' + reason : ''}`
+            });
+        } catch (logError) {
+            console.error('Lỗi khi ghi ActivityLog xóa comment:', logError);
+        }
+
         return res.status(200).json({ success: true, message: 'Đã xóa câu trả lời' });
     } catch (error) {
+        console.error('Lỗi route xóa comment:', error);
         return res.status(500).json({ success: false, message: 'Lỗi server' });
     }
 });

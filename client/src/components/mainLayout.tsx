@@ -77,7 +77,7 @@ const MainLayout: React.FC = () => {
     { key: 'tags', label: <Link to="/tags">Thẻ môn học</Link> },
   ];
 
-  if (user && ['admin', 'lecturer'].includes(user.role)) {
+  if (user && user.role === 'admin') {
     menuItems.push({ key: 'admin', label: <Link to="/admin">Quản lý</Link> });
   }
 

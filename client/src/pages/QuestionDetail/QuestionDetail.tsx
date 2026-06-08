@@ -147,11 +147,29 @@ const QuestionDetail: React.FC = () => {
     };
 
     const handleDeleteAnswer = (answerId: string) => {
+        let reason = '';
         confirm({
             title: 'Bạn có chắc muốn xoá câu trả lời này?',
+            content: (
+                <div style={{ marginTop: 16 }}>
+                    <p>Vui lòng nhập lý do xoá (bắt buộc):</p>
+                    <Input.TextArea 
+                        rows={3} 
+                        onChange={(e) => { reason = e.target.value; }} 
+                        placeholder="Ví dụ: Nội dung vi phạm nội quy, câu hỏi rác..."
+                    />
+                </div>
+            ),
             onOk: async () => {
+                if (!reason.trim()) {
+                    message.error('Vui lòng nhập lý do xoá');
+                    return Promise.reject();
+                }
                 try {
-                    await axios.delete(`${API_URL}/questions/${id}/answers/${answerId}`, authHeader);
+                    await axios.delete(`${API_URL}/questions/${id}/answers/${answerId}`, {
+                        ...authHeader,
+                        data: { reason }
+                    });
                     message.success('Đã xoá câu trả lời');
                     fetchQuestion();
                 } catch (error: any) {

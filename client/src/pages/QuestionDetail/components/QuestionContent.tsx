@@ -61,7 +61,7 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
                             {question.isPinned ? 'Bỏ ghim' : 'Ghim'}
                         </Button>
                     )}
-                    {(currentUserId === question.author._id || currentUserRole === 'admin' || currentUserRole === 'moderator' || currentUserRole === 'lecturer') && (
+                    {(currentUserId === question.author?._id || currentUserRole === 'admin' || currentUserRole === 'moderator' || currentUserRole === 'lecturer') && (
                         <Button 
                             size="small" 
                             danger 
@@ -76,15 +76,15 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                 <Space size="small">
-                    <Link to={`/user/${question.author._id}`}>
-                        <Avatar src={question.author.avatar} icon={<UserOutlined />} style={{ cursor: 'pointer' }} />
+                    <Link to={question.author ? `/user/${question.author._id}` : '#'}>
+                        <Avatar src={question.author?.avatar} icon={<UserOutlined />} style={{ cursor: 'pointer' }} />
                     </Link>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Link to={`/user/${question.author._id}`}>
-                                <Text strong style={{ fontSize: '15px', color: '#262626' }} className="hover-link">{question.author.name}</Text>
+                            <Link to={question.author ? `/user/${question.author._id}` : '#'}>
+                                <Text strong style={{ fontSize: '15px', color: '#262626' }} className="hover-link">{question.author?.name || 'Người dùng đã xóa'}</Text>
                             </Link>
-                            {question.author.role && (
+                            {question.author?.role && (
                                 <Tag color={question.author.role === 'lecturer' ? 'gold' : question.author.role === 'admin' ? 'red' : question.author.role === 'moderator' ? 'purple' : 'blue'}>
                                     {question.author.role === 'lecturer' ? 'Giảng viên' : question.author.role === 'admin' ? 'Quản trị viên' : question.author.role === 'moderator' ? 'Kiểm duyệt viên' : 'Sinh viên'}
                                 </Tag>

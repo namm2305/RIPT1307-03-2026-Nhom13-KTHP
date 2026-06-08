@@ -57,6 +57,7 @@ router.get('/logs', authorize('admin'), async (req, res) => {
     try {
         const logs = await ActivityLog.find()
             .populate('user', 'name email role avatar')
+            .populate('affectedUser', 'name email role avatar')
             .sort({ createdAt: -1 })
             .limit(100); 
         return res.status(200).json({ success: true, logs });
@@ -94,29 +95,52 @@ router.get('/questions', async (req, res) => {
     }
 });
 
-router.delete('/questions/:id', logActivity('Xóa câu hỏi', 'Question', req => req.params.id), async (req, res) => {
+router.delete('/questions/:id', async (req, res) => {
     try {
         const question = await Question.findById(req.params.id);
         if (!question) {
             return res.status(404).json({ success: false, message: 'Không tìm thấy câu hỏi' });
         }
         const { reason } = req.body;
+        const questionTitle = question.title;
+        const questionContent = question.content;
+        const questionAuthor = question.author;
 
-        if (question.author.toString() !== req.user._id.toString()) {
-            await Notification.create({
-                user: question.author,
-                sender: req.user._id,
-                type: 'SYSTEM_ALERT',
-                message: `Câu hỏi "${question.title}" của bạn đã bị xóa bởi ban quản trị. Lý do: ${reason || 'Không có lý do được cung cấp.'}`,
-                link: `/`
-            });
+        try {
+            if (question.author && question.author.toString() !== req.user._id.toString()) {
+                await Notification.create({
+                    user: question.author,
+                    sender: req.user._id,
+                    type: 'SYSTEM_ALERT',
+                    message: `Câu hỏi "${question.title}" của bạn đã bị xóa bởi ban quản trị. Lý do: ${reason || 'Không có lý do được cung cấp.'}`,
+                    link: `/`
+                });
+            }
+        } catch (notifErr) {
+            console.error('Lỗi khi tạo thông báo xóa câu hỏi trong admin:', notifErr);
         }
 
         await Comment.deleteMany({ question: question._id });
         await question.deleteOne();
 
+        try {
+            // Ghi nhật ký hoạt động
+            await ActivityLog.create({
+                action: `Xóa câu hỏi: "${questionTitle}"`,
+                user: req.user._id,
+                affectedUser: questionAuthor,
+                targetId: req.params.id,
+                targetModel: 'Question',
+                deletedContent: questionContent,
+                details: `IP: ${req.ip}${reason ? ' | Lý do: ' + reason : ''}`
+            });
+        } catch (logError) {
+            console.error('Lỗi khi ghi ActivityLog xóa câu hỏi (admin):', logError);
+        }
+
         return res.status(200).json({ success: true, message: 'Đã xóa câu hỏi' });
     } catch (error) {
+        console.error('Lỗi khi admin xóa câu hỏi:', error);
         return res.status(500).json({ success: false, message: 'Lỗi server' });
     }
 });

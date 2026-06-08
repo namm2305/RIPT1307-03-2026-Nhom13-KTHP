@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Tag = require('../models/Tag');
+const Question = require('../models/Question');
 const { protect, authorize } = require('../middleware/auth');
 const { logActivity } = require('../middleware/logger');
 
@@ -30,8 +31,20 @@ router.post('/', protect, authorize('admin', 'moderator'), logActivity('Tạo Ta
 
 router.put('/:id', protect, authorize('admin', 'moderator'), logActivity('Cập nhật Tag', 'Tag', req => req.params.id), async (req, res) => {
     try {
+        const oldTag = await Tag.findById(req.params.id);
+        if (!oldTag) return res.status(404).json({ success: false, message: 'Không tìm thấy thẻ' });
+        
+        const oldName = oldTag.name;
+
         const tag = await Tag.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!tag) return res.status(404).json({ success: false, message: 'Không tìm thấy thẻ' });
+        
+        if (req.body.name && req.body.name !== oldName) {
+            await Question.updateMany(
+                { tags: oldName },
+                { $set: { "tags.$": req.body.name } }
+            );
+        }
+
         return res.status(200).json({ success: true, tag });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Lỗi server' });

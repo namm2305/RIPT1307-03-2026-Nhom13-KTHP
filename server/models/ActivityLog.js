@@ -10,6 +10,11 @@ const activityLogSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    affectedUser: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+        default: null
+    },
     targetId: {
         type: mongoose.Schema.Types.Mixed, 
         default: null
@@ -18,6 +23,10 @@ const activityLogSchema = new mongoose.Schema({
         type: String,
         enum: ['User', 'Question', 'Comment', 'Tag', 'Subject', null],
         default: null
+    },
+    deletedContent: {
+        type: String,
+        default: ''
     },
     details: {
         type: String,
