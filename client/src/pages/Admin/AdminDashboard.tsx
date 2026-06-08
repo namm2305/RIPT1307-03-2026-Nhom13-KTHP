@@ -10,7 +10,6 @@ import { useAuth } from '../../context/AuthContext';
 import OverviewTab from './components/OverviewTab';
 import UsersTab from './components/UsersTab';
 import QuestionsTab from './components/QuestionsTab';
-import SubjectsTab from './components/SubjectsTab';
 import TagsTab from './components/TagsTab';
 import ActivityLogTab from './components/ActivityLogTab';
 
@@ -43,7 +42,6 @@ const AdminDashboard: React.FC = () => {
     { key: 'overview', icon: <DashboardOutlined />, label: 'Tổng quan' },
     { key: 'users', icon: <TeamOutlined />, label: 'Người dùng' },
     { key: 'questions', icon: <QuestionCircleOutlined />, label: 'Câu hỏi' },
-    { key: 'subjects', icon: <BookOutlined />, label: 'Môn học' },
     { key: 'tags', icon: <TagsOutlined />, label: 'Thẻ (Tags)' },
   ];
 
@@ -56,7 +54,6 @@ const AdminDashboard: React.FC = () => {
       case 'overview': return <OverviewTab />;
       case 'users': return <UsersTab />;
       case 'questions': return <QuestionsTab />;
-      case 'subjects': return <SubjectsTab />;
       case 'tags': return <TagsTab />;
       case 'logs': return <ActivityLogTab />;
       default: return <OverviewTab />;

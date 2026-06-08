@@ -7,6 +7,23 @@ const Subject = require('../models/Subject');
 const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
 const { protect, authorize } = require('../middleware/auth');
+const Tag = require('../models/Tag');
+
+const syncTagsToDB = async (tagsArray) => {
+    if (!tagsArray || !Array.isArray(tagsArray) || tagsArray.length === 0) return;
+    try {
+        const bulkOps = tagsArray.map(tag => ({
+            updateOne: {
+                filter: { name: tag },
+                update: { $setOnInsert: { name: tag, description: `Thẻ thảo luận về ${tag}`, color: 'blue' } },
+                upsert: true
+            }
+        }));
+        await Tag.bulkWrite(bulkOps);
+    } catch (err) {
+        console.error('Lỗi khi đồng bộ tags:', err);
+    }
+};
 
 const sendNotificationToFollowers = async (question, senderId, type, message, link) => {
     const recipients = new Set();
@@ -164,6 +181,10 @@ router.post('/', protect, async (req, res) => {
             author: req.user._id
         });
 
+        if (tags && tags.length > 0) {
+            await syncTagsToDB(tags);
+        }
+
         await User.findByIdAndUpdate(req.user._id, { $inc: { reputation: 5 } });
 
         const populated = await question.populate('author', 'name avatar role faculty');
@@ -194,7 +215,10 @@ router.put('/:id', protect, async (req, res) => {
 
         if (title) question.title = title;
         if (content) question.content = content;
-        if (tags) question.tags = tags;
+        if (tags) {
+            question.tags = tags;
+            await syncTagsToDB(tags);
+        }
 
         let statusMsg = '';
         if (isPrivileged) {

@@ -120,33 +120,6 @@ const QuestionsTab: React.FC = () => {
           <div>Votes: {record.votes}</div>
         </div>
       )
-    },
-    {
-      title: 'Trạng thái',
-      key: 'status',
-      render: (_: any, record: any) => (
-        <Space direction="vertical" size="small">
-          {record.isSolved ? <Tag color="success">Đã giải quyết</Tag> : <Tag color="warning">Chưa giải quyết</Tag>}
-        </Space>
-      )
-    },
-    {
-      title: 'Hành động',
-      key: 'action',
-      render: (_: any, record: any) => (
-        <Space size="small">
-          <Button 
-            size="small" 
-            type={record.isSolved ? 'default' : 'primary'} 
-            ghost={record.isSolved}
-            icon={<CheckCircleOutlined />} 
-            onClick={() => handleToggleSolve(record._id)}
-          >
-            {record.isSolved ? 'Bỏ Solve' : 'Solve'}
-          </Button>
-          <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record._id, record.title)} />
-        </Space>
-      )
     }
   ];
 

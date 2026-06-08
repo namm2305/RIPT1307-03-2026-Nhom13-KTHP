@@ -44,6 +44,11 @@ const OverviewTab: React.FC = () => {
     "Câu hỏi": s.count
   }));
 
+  const tagData = stats.charts?.tags?.map((t: any) => ({
+    name: t.tag,
+    "Câu hỏi": t.count
+  })) || [];
+
   return (
     <div>
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -57,16 +62,7 @@ const OverviewTab: React.FC = () => {
             <Statistic title="Câu hỏi" value={stats.stats.questions} prefix={<QuestionCircleOutlined style={{ color: '#722ed1' }} />} />
           </Card>
         </Col>
-        <Col xs={12} sm={8} md={6}>
-          <Card bordered={false} style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <Statistic title="Bình luận" value={stats.stats.comments} prefix={<MessageOutlined style={{ color: '#52c41a' }} />} />
-          </Card>
-        </Col>
-        <Col xs={12} sm={8} md={6}>
-          <Card bordered={false} style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <Statistic title="Tags" value={stats.stats.tags} prefix={<TagsOutlined style={{ color: '#faad14' }} />} />
-          </Card>
-        </Col>
+
         <Col xs={12} sm={8} md={6}>
           <Card bordered={false} style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
             <Statistic title="Bị khóa" value={stats.stats.users.inactive} prefix={<LockOutlined style={{ color: '#f5222d' }} />} />
@@ -102,15 +98,15 @@ const OverviewTab: React.FC = () => {
             </div>
           </Card>
         </Col>
-        
+
         <Col xs={24} lg={12}>
-          <Card title="Số lượng câu hỏi theo môn học" bordered={false} style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+          <Card title="Số lượng câu hỏi theo Tag" bordered={false} style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
             <div style={{ width: '100%', height: 300 }}>
               <Column
-                data={subjectData}
+                data={tagData}
                 xField="name"
                 yField="Câu hỏi"
-                color="#1890ff"
+                color="#faad14"
                 label={{
                   text: (d: any) => d['Câu hỏi'],
                   position: 'top',
@@ -119,6 +115,7 @@ const OverviewTab: React.FC = () => {
             </div>
           </Card>
         </Col>
+
       </Row>
     </div>
   );

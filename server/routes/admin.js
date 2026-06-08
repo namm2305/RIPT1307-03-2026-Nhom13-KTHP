@@ -34,6 +34,13 @@ router.get('/stats', async (req, res) => {
             { $project: { _id: 1, count: 1, subjectName: { $ifNull: ['$subjectData.name', 'Chưa phân loại'] } } }
         ]);
 
+        const questionsByTag = await Question.aggregate([
+            { $unwind: { path: '$tags', preserveNullAndEmptyArrays: false } },
+            { $group: { _id: '$tags', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 }
+        ]);
+
         return res.status(200).json({
             success: true,
             stats: {
@@ -45,7 +52,8 @@ router.get('/stats', async (req, res) => {
             },
             charts: {
                 roles: rolesCount.map(r => ({ role: r._id, count: r.count })),
-                subjects: questionsBySubject.map(s => ({ subject: s.subjectName, count: s.count }))
+                subjects: questionsBySubject.map(s => ({ subject: s.subjectName, count: s.count })),
+                tags: questionsByTag.map(t => ({ tag: t._id, count: t.count }))
             }
         });
     } catch (error) {
