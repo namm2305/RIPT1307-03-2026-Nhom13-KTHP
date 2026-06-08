@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 
 export interface User {
   id: string;
@@ -45,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token) {
         setAuthHeader(token);
         try {
-          const res = await axios.get('/api/auth/me');
+          const res = await axios.get(`${API_BASE}/auth/me`);
           if (res.data && res.data.success) {
             setUser(res.data.user);
           } else {
@@ -66,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      const res = await axios.post('/api/auth/login', { email, password });
+      const res = await axios.post(`${API_BASE}/auth/login`, { email, password });
       if (res.data && res.data.success) {
         const { token, user: userData } = res.data;
         localStorage.setItem('token', token);
@@ -89,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     faculty?: string;
   }) => {
     try {
-      const res = await axios.post('/api/auth/register', userData);
+      const res = await axios.post(`${API_BASE}/auth/register`, userData);
       if (res.data && res.data.success) {
         const { token, user: registeredUser } = res.data;
         localStorage.setItem('token', token);
